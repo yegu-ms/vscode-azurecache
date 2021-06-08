@@ -20,11 +20,8 @@ import { ParsedRedisResource } from '../src-shared/ParsedRedisResource';
 import * as Strings from './Strings';
 import { AzureAccountTreeItem } from './tree/azure/AzureAccountTreeItem';
 import { AzureCacheItem } from './tree/azure/AzureCacheItem';
-import { FilterParentItem } from './tree/FilterParentItem';
-import { RedisSetItem } from './tree/redis/RedisSetItem';
-import { RedisZSetItem } from './tree/redis/RedisZSetItem';
-import { RedisHashItem } from './tree/redis/RedisHashItem';
-import { RedisListItem } from './tree/redis/RedisListItem';
+import { KeyFilterParentItem } from './tree/KeyFilterParentItem';
+import { KeyFilterItem } from './tree/filter/KeyFilterItem';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     ExtVars.context = context;
@@ -62,8 +59,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('azureCache.setKeyFilter', async (treeItem: FilterParentItem) => {
-            const currentFilterExpr = treeItem.getFilter();
+        vscode.commands.registerCommand('azureCache.addKeyFilter', async (treeItem: KeyFilterParentItem) => {
             const input = await textInput(
                 '*',
                 Strings.StrPromptKeyFilter,
@@ -71,34 +67,34 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                  * TODO: Here and elsewhere: make this more localization-friendly as some localities might put things
                  *       in a different order (e.g. filter expression text going before the 'Current:' string).
                  */
-                `${Strings.StrCurrent}: ${currentFilterExpr}`
+                '*'
             );
             if (input) {
-                treeItem.updateFilter(input);
+                treeItem.addKeyFilter(input);
             }
         })
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('azureCache.viewSet', async (treeItem: RedisSetItem) => {
-            treeItem.showWebview();
+        vscode.commands.registerCommand('azureCache.setKeyFilter', async (treeItem: KeyFilterParentItem) => {
+            //const currentFilterExpr = treeItem.getKeyFilter();
+            const input = await textInput(
+                '*',
+                Strings.StrPromptKeyFilter,
+                /**
+                 * TODO: Here and elsewhere: make this more localization-friendly as some localities might put things
+                 *       in a different order (e.g. filter expression text going before the 'Current:' string).
+                 */
+                `${Strings.StrCurrent}: *`
+            );
+            if (input) {
+                //treeItem.updateKeyFilter(input);
+            }
         })
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('azureCache.viewZSet', async (treeItem: RedisZSetItem) => {
-            treeItem.showWebview();
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('azureCache.viewHash', async (treeItem: RedisHashItem) => {
-            treeItem.showWebview();
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('azureCache.viewList', async (treeItem: RedisListItem) => {
+        vscode.commands.registerCommand('azureCache.viewFilteredKeys', async (treeItem: KeyFilterItem) => {
             treeItem.showWebview();
         })
     );

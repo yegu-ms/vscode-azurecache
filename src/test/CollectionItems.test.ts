@@ -6,7 +6,7 @@ import { RedisClient } from '../clients/RedisClient';
 import { RedisResourceClient } from '../clients/RedisResourceClient';
 import { AzureCacheItem } from '../tree/azure/AzureCacheItem';
 import { AzureSubscriptionTreeItem } from '../tree/azure/AzureSubscriptionTreeItem';
-import { RedisDbItem } from '../tree/redis/RedisDbItem';
+import { RedisDbFilterItem } from '../tree/filter/RedisDbFilterItem';
 import { RedisHashItem } from '../tree/redis/RedisHashItem';
 import { RedisListItem } from '../tree/redis/RedisListItem';
 import { RedisSetItem } from '../tree/redis/RedisSetItem';
@@ -51,7 +51,7 @@ describe('CollectionItems', () => {
         {} as RedisResourceClient,
         sampleParsedRedisResource
     );
-    const testDb = new RedisDbItem(cacheItem, 0);
+    const testDb = new RedisDbFilterItem(cacheItem, 0);
 
     describe('RedisListItem', async () => {
         it('should load child elements in continuous manner', async () => {
@@ -70,14 +70,14 @@ describe('CollectionItems', () => {
             const listItem = new RedisListItem(testDb, 'mylist');
             let childItems = await listItem.loadNextChildren(true);
             assert.strictEqual(childItems.length, 10);
-            assert.strictEqual(childItems[0].value, '0');
+            assert.strictEqual(childItems[0].key, '0');
             assert(listItem.hasNextChildren());
 
             // Load last batch of child elements
             childItems = await listItem.loadNextChildren(false);
             assert.strictEqual(childItems.length, 5);
             // The label value should continue from previously loaded elements
-            assert.strictEqual(childItems[0].value, '10');
+            assert.strictEqual(childItems[0].key, '10');
             assert(!listItem.hasNextChildren());
         });
 
@@ -163,11 +163,11 @@ describe('CollectionItems', () => {
 
         it('should properly handle filter change and reset', () => {
             const hashItem = new RedisHashItem(testDb, 'myhash');
-            assert(hashItem.getFilter(), '*');
-            hashItem.updateFilter('test');
-            assert(hashItem.getFilter(), 'test');
+            assert(hashItem.getKeyFilter(0), '*');
+            hashItem.updateKeyFilter(0, 'test');
+            assert(hashItem.getKeyFilter(0), 'test');
             hashItem.reset();
-            assert(hashItem.getFilter(), '*');
+            assert(hashItem.getKeyFilter(0), '*');
         });
     });
 
@@ -192,14 +192,14 @@ describe('CollectionItems', () => {
             // First call should load minimum 10 elements
             let childItems = await setItem.loadNextChildren(true);
             assert.strictEqual(childItems.length, 10);
-            assert.strictEqual(childItems[0].value, 'A');
-            assert.strictEqual(childItems[9].value, 'J');
+            assert.strictEqual(childItems[0].key, 'A');
+            assert.strictEqual(childItems[9].key, 'J');
             assert(setItem.hasNextChildren());
 
             // Next call should load last remaining element
             childItems = await setItem.loadNextChildren(false);
             assert.strictEqual(childItems.length, 1);
-            assert.strictEqual(childItems[0].value, 'K');
+            assert.strictEqual(childItems[0].key, 'K');
             assert(!setItem.hasNextChildren());
         });
 
@@ -240,9 +240,9 @@ describe('CollectionItems', () => {
             let childItems = await zsetItem.loadNextChildren(true);
             assert.strictEqual(childItems.length, 10);
             assert.strictEqual(childItems[0].id, '0');
-            assert.strictEqual(childItems[0].value, 'A');
+            assert.strictEqual(childItems[0].key, 'A');
             assert.strictEqual(childItems[9].id, '9');
-            assert.strictEqual(childItems[9].value, 'J');
+            assert.strictEqual(childItems[9].key, 'J');
             assert(zsetItem.hasNextChildren());
 
             // Load last remaining element
@@ -250,7 +250,7 @@ describe('CollectionItems', () => {
             assert.strictEqual(childItems.length, 1);
             // The label value should continue from previously loaded elements
             assert.strictEqual(childItems[0].id, '10');
-            assert.strictEqual(childItems[0].value, 'K');
+            assert.strictEqual(childItems[0].key, 'K');
             assert(!zsetItem.hasNextChildren());
             // ZCARD should only be called once, when 'clearCache' set to true
             assert(zcardStub.calledOnce);

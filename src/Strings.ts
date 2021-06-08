@@ -6,10 +6,10 @@ export const StrCurrent = 'Current';
 export const StrCurrentProvStateIs = 'Current provisioning state is';
 export const StrDatabaseAbbrv = 'DB';
 export const StrHashFieldFilter = 'Hash field filter';
-export const StrKeyFilter = 'Key filter';
+export const StrKeyFilter = 'Keys matching';
 export const StrProperties = 'Properties';
 export const StrShard = 'Shard';
-export const StrUnknownShard = 'Unknown Shard';
+export const StrUnknownShard = 'Unknown shard';
 
 export const StrPromptKeyFilter = 'Provide a key filter expression';
 export const StrPromptHashFieldFilter = 'Provide a hash field filter expression';

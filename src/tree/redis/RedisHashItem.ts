@@ -6,20 +6,20 @@ import { TreeItemIconPath } from 'vscode-azureextensionui';
 import { CollectionElement } from '../../../src-shared/CollectionElement';
 import { RedisClient } from '../../clients/RedisClient';
 import { CollectionWebview } from '../../webview/CollectionWebview';
-import { CollectionKeyItem } from '../CollectionKeyItem';
-import { FilterParentItem } from '../FilterParentItem';
+import { KeyCollectionItem } from '../KeyCollectionItem';
+import { KeyFilterParentItem } from '../KeyFilterParentItem';
 
 /**
  * Tree item for a hash.
  */
-export class RedisHashItem extends CollectionKeyItem implements FilterParentItem {
+export class RedisHashItem extends KeyCollectionItem implements KeyFilterParentItem {
     private static readonly commandId = 'azureCache.viewHash';
     private static readonly contextValue = 'redisHashItem';
     private static readonly description = '(hash)';
     private static readonly incrementCount = 10;
 
     protected webview: CollectionWebview = new CollectionWebview(this, 'hash');
-    private filterExpr = '*';
+    private filters = ['*'];
     private scanCursor?: string = '0';
 
     get contextValue(): string {
@@ -71,7 +71,7 @@ export class RedisHashItem extends CollectionKeyItem implements FilterParentItem
         // Keep scanning until a total of at least 10 elements have been returned
         // TODO: This can be optimized by sending data to webview after each SCAN instead of waiting until all SCANs have completed
         do {
-            const result = await client.hscan(this.key, curCursor, 'MATCH', this.filterExpr, this.db);
+            const result = await client.hscan(this.key, curCursor, 'MATCH', this.filters[0], this.db);
             curCursor = result[0];
             scannedFields.push(...result[1]);
             // scannedFields contains field name and value, so divide by 2 to get number of values scanned
@@ -91,7 +91,7 @@ export class RedisHashItem extends CollectionKeyItem implements FilterParentItem
                 // Odd indices contain the hash field value
                 const collectionElement = {
                     id: field,
-                    value: scannedFields[index],
+                    key: scannedFields[index],
                 } as CollectionElement;
                 collectionElements.push(collectionElement);
             }
@@ -104,18 +104,29 @@ export class RedisHashItem extends CollectionKeyItem implements FilterParentItem
         return typeof this.scanCursor === 'string';
     }
 
-    public getFilter(): string {
-        return this.filterExpr;
+    public addKeyFilter(filterExpr: string): number {
+        const found = this.filters.indexOf(filterExpr);
+        return found < 0 ? this.filters.push(filterExpr)-1 : found;
     }
 
-    public updateFilter(filterExpr: string): void {
-        if (this.filterExpr !== filterExpr) {
-            this.filterExpr = filterExpr;
+    public getKeyFilter(index: number): string {
+        return index < this.filters.length ? this.filters[index] : "*";
+    }
+
+    public updateKeyFilter(index: number, filterExpr: string): void {
+        if (index < this.filters.length && this.filters[index] !== filterExpr) {
+            this.filters[index] = filterExpr;
+        }
+    }
+
+    public deleteKeyFilter(index: number): void {
+        if (index < this.filters.length) {
+            this.filters.splice(index, 1);
         }
     }
 
     public reset(): void {
-        this.filterExpr = '*';
+        this.filters = ['*'];
         this.scanCursor = '0';
     }
 }

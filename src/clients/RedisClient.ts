@@ -318,6 +318,10 @@ export class RedisClient {
         return client.options;
     }
 
+    public async dbsize(db?: number): Promise<number> {
+        return this.exec((await this.getClient(db)).dbsize());
+    }
+
     public async get(key: string, db?: number): Promise<string | null> {
         return this.exec((await this.getClient(db)).get(key));
     }

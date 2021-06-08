@@ -6,12 +6,12 @@ import { TreeItemIconPath } from 'vscode-azureextensionui';
 import { RedisClient } from '../../clients/RedisClient';
 import { CollectionElement } from '../../../src-shared/CollectionElement';
 import { CollectionWebview } from '../../webview/CollectionWebview';
-import { CollectionKeyItem } from '../CollectionKeyItem';
+import { KeyCollectionItem } from '../KeyCollectionItem';
 
 /**
  * Tree item for a list.
  */
-export class RedisListItem extends CollectionKeyItem {
+export class RedisListItem extends KeyCollectionItem {
     private static readonly commandId = 'azureCache.viewList';
     private static readonly contextValue = 'redisListItem';
     private static readonly description = '(list)';
@@ -73,7 +73,7 @@ export class RedisListItem extends CollectionKeyItem {
 
         const collectionElements = values.map((value) => {
             return {
-                value,
+                key: value,
             } as CollectionElement;
         });
 

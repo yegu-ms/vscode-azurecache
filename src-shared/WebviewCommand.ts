@@ -10,10 +10,12 @@ export enum WebviewCommand {
     ConnectionString = 'connectionString',
     CopyText = 'copyText',
     // Data viewer
-    KeyType = 'keyType',
+    Title = 'title',
     KeyName = 'keyName',
     CollectionSize = 'collectionSize',
     CollectionData = 'collectionData',
+    CollectionElementData = 'collectionElementData',
     FilterChange = 'filterChange',
+    GetValue = 'loadKeyValue',
     LoadMore = 'loadMore',
 }

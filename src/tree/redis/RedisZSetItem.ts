@@ -6,12 +6,12 @@ import { TreeItemIconPath } from 'vscode-azureextensionui';
 import { RedisClient } from '../../clients/RedisClient';
 import { CollectionElement } from '../../../src-shared/CollectionElement';
 import { CollectionWebview } from '../../webview/CollectionWebview';
-import { CollectionKeyItem } from '../CollectionKeyItem';
+import { KeyCollectionItem } from '../KeyCollectionItem';
 
 /**
  * Tree item for a sorted set.
  */
-export class RedisZSetItem extends CollectionKeyItem {
+export class RedisZSetItem extends KeyCollectionItem {
     private static readonly commandId = 'azureCache.viewZSet';
     private static readonly contextValue = 'redisZSetItem';
     private static readonly description = '(zset)';
@@ -82,7 +82,7 @@ export class RedisZSetItem extends CollectionKeyItem {
                 // Odd indices contain the key score, so construct the tree item here as the associated value is saved
                 const collectionElement = {
                     id: scannedElems[index],
-                    value,
+                    key: value,
                 } as CollectionElement;
                 collectionElements.push(collectionElement);
             }

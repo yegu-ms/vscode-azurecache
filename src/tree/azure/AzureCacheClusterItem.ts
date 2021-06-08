@@ -18,20 +18,19 @@ import { ErrorEmptyCache } from '../../Strings';
 import * as ResourceUtils from '../../utils/ResourceUtils';
 import { KeyFilterItem } from '../filter/KeyFilterItem';
 import { KeyFilterParentItem } from '../KeyFilterParentItem';
+import { RedisClusterNodeItem } from '../redis/RedisClusterNodeItem';
 import { RedisDbFilterItem } from '../filter/RedisDbFilterItem';
 import { AzureSubscriptionTreeItem } from './AzureSubscriptionTreeItem';
 import path = require('path');
-import { DataFilterParentItem } from '../DataFilterParentItem';
 
 /**
  * Tree item for an Azure cache.
  */
-export class AzureCacheItem extends AzureParentTreeItem implements DataFilterParentItem, KeyFilterParentItem {
+export class AzureCacheClusterItem extends AzureParentTreeItem implements KeyFilterParentItem {
     public static contextValue = 'redisCache';
     private static commandId = 'azureCache.viewCacheProps';
 
     private filters = ['*'];
-    private activeDbs: number[] = [];
     private webview: CachePropsWebview;
     // When the filter expression changes for a clustered cache, use emitter to notify the child tree items.
     private onFilterChangeEmitter = new vscode.EventEmitter<void>();
@@ -46,7 +45,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
     }
 
     get commandId(): string {
-        return AzureCacheItem.commandId;
+        return AzureCacheClusterItem.commandId;
     }
 
     get commandArgs(): unknown[] {
@@ -54,7 +53,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
     }
 
     get contextValue(): string {
-        return AzureCacheItem.contextValue;
+        return AzureCacheClusterItem.contextValue;
     }
 
     get iconPath(): TreeItemIconPath {
@@ -72,32 +71,39 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
     public async loadMoreChildrenImpl(_clearCache: boolean, _context: IActionContext): Promise<AzExtTreeItem[]> {
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource, true);
 
-        // Parse active databases from INFO KEYSPACE command
-        const dbRegex = /db([0-9]+)/gm;
-        const infoKeyspace = await client.info('keyspace');
-        const matches = infoKeyspace.match(dbRegex);
+        const treeItems = [];
+        const clusterNodeIds = client.clusterNodeIds;
 
-        if (!matches) {
-            return [
-                new GenericTreeItem(this, {
-                    label: ErrorEmptyCache,
-                    contextValue: 'emptyCache',
-                }),
-            ];
+        for (const nodeId of clusterNodeIds) {
+            const port = (await client.getClusterNodeOptions(nodeId)).port;
+            if (port) {
+                treeItems.push(new RedisClusterNodeItem(this, this.onFilterChangeEmitter, nodeId, port));
+            }
         }
 
-        // Extract DB number (e.g. 'db20' to 20)
-        this.activeDbs = matches.map((match) => parseInt(match.split('db')[1]));
-        // Map DB numbers to TreeItems
-        const treeItems: AzExtTreeItem[] = [];
-        this.activeDbs.map((db) => treeItems.push(new RedisDbFilterItem(this)));
-        this.filters.map((_, index) => treeItems.push(new KeyFilterItem(this, index)));
-
+        treeItems.push(new KeyFilterItem(this, 0));
         return treeItems;
     }
 
     public hasMoreChildrenImpl(): boolean {
         return false;
+    }
+
+    public compareChildrenImpl(item1: AzExtTreeItem, item2: AzExtTreeItem): number {
+        // Always place the filter tree item as the first item
+        if (item1 instanceof KeyFilterItem) {
+            return -1;
+        } else if (item2 instanceof KeyFilterItem) {
+            return 1;
+        }
+
+        // Order cluster node tree items by their port numbers
+        if (item1 instanceof RedisClusterNodeItem && item2 instanceof RedisClusterNodeItem) {
+            return item1.port - item2.port;
+        }
+
+        // Otherwise for DB tree items, they are inherently ordered so just use the insertion order
+        return 0;
     }
 
     public async refreshImpl(): Promise<void> {
@@ -106,10 +112,6 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         this.parsedRedisResource = await this.resClient.getRedisResourceByName(resourceGroup, name);
         // Refresh webview (if open) with the new ParsedRedisResource
         await this.webview.refresh(this.parsedRedisResource);
-    }
-
-    public getDataFilterList(): number[] {
-        return this.activeDbs;
     }
 
     public addKeyFilter(filterExpr: string): number {

@@ -4,7 +4,7 @@
 import { AzExtTreeItem } from 'vscode-azureextensionui';
 import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
 import { RedisClusterNodeItem } from './redis/RedisClusterNodeItem';
-import { RedisDbItem } from './redis/RedisDbItem';
+import { RedisDbFilterItem } from './filter/RedisDbFilterItem';
 
 /**
  * Base class for tree items that represents "leaf" nodes (items that hold the contents of a Redis key).
@@ -25,7 +25,7 @@ export abstract class KeyContentItem extends AzExtTreeItem {
      */
     protected readonly key: string;
 
-    constructor(readonly parent: RedisDbItem | RedisClusterNodeItem, key: string) {
+    constructor(readonly parent: RedisDbFilterItem | RedisClusterNodeItem, key: string) {
         super(parent);
         this.parsedRedisResource = parent.parsedRedisResource;
         this.db = parent.db;

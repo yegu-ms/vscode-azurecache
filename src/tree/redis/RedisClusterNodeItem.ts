@@ -2,19 +2,11 @@
 // Licensed under the MIT License.
 
 import * as vscode from 'vscode';
-import { AzExtTreeItem, IActionContext, TreeItemIconPath } from 'vscode-azureextensionui';
-import { RedisClient } from '../../clients/RedisClient';
+import { TreeItemIconPath } from 'vscode-azureextensionui';
 import { StrShard, StrUnknownShard } from '../../Strings';
 import { AzureCacheItem } from '../azure/AzureCacheItem';
-import { KeyFilterItem } from '../filter/KeyFilterItem';
-import { FilterParentItem } from '../FilterParentItem';
+import { KeyFilterParentItem } from '../KeyFilterParentItem';
 import { KeyContainerItem } from '../KeyContainerItem';
-import { RedisHashItem } from './RedisHashItem';
-import { RedisListItem } from './RedisListItem';
-import { RedisOtherItem } from './RedisOtherItem';
-import { RedisSetItem } from './RedisSetItem';
-import { RedisStringItem } from './RedisStringItem';
-import { RedisZSetItem } from './RedisZSetItem';
 
 /**
  * Tree item for a shard in a clustered cache.
@@ -27,7 +19,7 @@ export class RedisClusterNodeItem extends KeyContainerItem {
     private shard?: number;
 
     constructor(
-        parent: AzureCacheItem & FilterParentItem,
+        parent: AzureCacheItem & KeyFilterParentItem,
         filterChangeEmitter: vscode.EventEmitter<void>,
         readonly nodeId: string,
         readonly port: number
@@ -80,9 +72,8 @@ export class RedisClusterNodeItem extends KeyContainerItem {
         return StrUnknownShard;
     }
 
-    /**
-     * Loads additional keys as child elements by running the SCAN command and keeping track of the current cursor.
-     */
+    /*
+    // Loads additional keys as child elements by running the SCAN command and keeping track of the current cursor.
     public async loadMoreChildrenImpl(clearCache: boolean, context: IActionContext): Promise<AzExtTreeItem[]> {
         if (clearCache) {
             this.scanCursor = '0';
@@ -104,7 +95,7 @@ export class RedisClusterNodeItem extends KeyContainerItem {
                 this.nodeId,
                 curCursor,
                 'MATCH',
-                this.parent.getFilter()
+                this.parent.getKeyFilter(0)
             );
         } while (curCursor !== '0' && scannedKeys.length === 0);
 
@@ -127,22 +118,5 @@ export class RedisClusterNodeItem extends KeyContainerItem {
 
         return 0;
     }
-
-    private async createLocalRedisKey(client: RedisClient, key: string): Promise<AzExtTreeItem> {
-        const type = await client.type(key);
-
-        if (type === 'string') {
-            return new RedisStringItem(this, key);
-        } else if (type === 'list') {
-            return new RedisListItem(this, key);
-        } else if (type === 'hash') {
-            return new RedisHashItem(this, key);
-        } else if (type === 'set') {
-            return new RedisSetItem(this, key);
-        } else if (type === 'zset') {
-            return new RedisZSetItem(this, key);
-        } else {
-            return new RedisOtherItem(this, key, type);
-        }
-    }
+    */
 }

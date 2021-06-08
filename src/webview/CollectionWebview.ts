@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 import { BaseWebview } from './BaseWebview';
-import { CollectionKeyItem } from '../tree/CollectionKeyItem';
-import { SupportedKeyType } from '../SupportedKeyType';
+import { KeyCollectionItem } from '../tree/KeyCollectionItem';
+import { CollectionElement } from '../../src-shared/CollectionElement';
 import { CollectionWebviewData } from '../../src-shared/CollectionWebviewData';
 import { RedisHashItem } from '../tree/redis/RedisHashItem';
 import { WebviewCommand } from '../../src-shared/WebviewCommand';
@@ -16,7 +16,7 @@ import { WebviewView } from '../../src-shared/WebviewView';
 export class CollectionWebview extends BaseWebview {
     protected viewType = this.type;
 
-    constructor(private readonly parent: CollectionKeyItem, private readonly type: SupportedKeyType) {
+    constructor(private readonly parent: KeyCollectionItem, private readonly type: string) {
         super();
     }
 
@@ -26,8 +26,7 @@ export class CollectionWebview extends BaseWebview {
      */
     protected async sendData(): Promise<void> {
         this.postMessage(WebviewCommand.View, WebviewView.CollectionKey);
-        this.postMessage(WebviewCommand.KeyType, this.type);
-        this.postMessage(WebviewCommand.KeyName, this.parent.key);
+        this.postMessage(WebviewCommand.Title, this.parent.title);
         this.postMessage(WebviewCommand.CollectionSize, await this.parent.getSize());
         await this.loadAndSendNextChildren(true);
     }
@@ -37,13 +36,16 @@ export class CollectionWebview extends BaseWebview {
      * @param message Webview message
      */
     protected async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
-        if (message.command === WebviewCommand.LoadMore) {
+        if (message.command === WebviewCommand.GetValue) {
+            const elementValue = await this.parent.loadKeyValue(message.value as CollectionElement);
+            this.postMessage(WebviewCommand.CollectionElementData, elementValue);
+        } else if (message.command === WebviewCommand.LoadMore) {
             // Load more elements, continuing from previous scan
             await this.loadAndSendNextChildren(false);
         } else if (message.command === WebviewCommand.FilterChange) {
             // Hash filter changed
             if (this.parent instanceof RedisHashItem) {
-                this.parent.updateFilter(message.value as string);
+                this.parent.updateKeyFilter(0, message.value as string);
                 await this.loadAndSendNextChildren(true);
             }
         }
