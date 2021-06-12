@@ -15,13 +15,15 @@ import { AzureAccount } from './AzureAccount.api';
 import { RedisClient } from './clients/RedisClient';
 import { ExtVars } from './ExtensionVariables';
 import { textInput } from './Input';
+import { quickPick } from './QuickPick';
 import { KeyContentProvider } from './KeyContentProvider';
 import { ParsedRedisResource } from '../src-shared/ParsedRedisResource';
-import * as Strings from './Strings';
 import { AzureAccountTreeItem } from './tree/azure/AzureAccountTreeItem';
 import { AzureCacheItem } from './tree/azure/AzureCacheItem';
+import { RedisDbFilterItem } from './tree/filter/RedisDbFilterItem';
 import { KeyFilterParentItem } from './tree/KeyFilterParentItem';
 import { KeyFilterItem } from './tree/filter/KeyFilterItem';
+import * as Strings from './Strings';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     ExtVars.context = context;
@@ -69,26 +71,38 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                  */
                 '*'
             );
-            if (input) {
+            if (input !== undefined) {
                 treeItem.addKeyFilter(input);
             }
         })
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('azureCache.setKeyFilter', async (treeItem: KeyFilterParentItem) => {
-            //const currentFilterExpr = treeItem.getKeyFilter();
+        vscode.commands.registerCommand('azureCache.selectDatabases', async (treeItem: RedisDbFilterItem) => {
+            const picks = await quickPick(
+                treeItem.getDbSelections(),
+                Strings.StrSelectDbs
+            );
+            if (picks !== undefined) {
+                treeItem.setDbSelections(picks);
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('azureCache.setKeyFilter', async (treeItem: KeyFilterItem) => {
+            const currentFilter = treeItem.getFilter();
             const input = await textInput(
-                '*',
+                currentFilter,
                 Strings.StrPromptKeyFilter,
                 /**
                  * TODO: Here and elsewhere: make this more localization-friendly as some localities might put things
                  *       in a different order (e.g. filter expression text going before the 'Current:' string).
                  */
-                `${Strings.StrCurrent}: *`
+                `${Strings.StrCurrent}: ${currentFilter}`
             );
-            if (input) {
-                //treeItem.updateKeyFilter(input);
+            if (input !== undefined) {
+                treeItem.setFilter(input);
             }
         })
     );
@@ -123,7 +137,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     registerCommand(
         'azureCache.copyConnectionString',
         async (actionContext: IActionContext, treeItem?: AzureCacheItem) => {
-            if (!treeItem) {
+            if (treeItem === undefined) {
                 treeItem = (await ExtVars.treeDataProvider.showTreeItemPicker(
                     AzureCacheItem.contextValue,
                     actionContext
@@ -131,7 +145,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
 
             const connectionString = await treeItem.getConnectionString();
-            if (connectionString) {
+            if (connectionString !== undefined) {
                 vscode.env.clipboard.writeText(connectionString);
             } else {
                 vscode.window.showErrorMessage(Strings.ErrorConnectionString);
@@ -148,7 +162,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     registerCommand('azureCache.openInPortal', async (actionContext: IActionContext, treeItem?: AzureCacheItem) => {
-        if (!treeItem) {
+        if (treeItem === undefined) {
             treeItem = (await ExtVars.treeDataProvider.showTreeItemPicker(
                 AzureCacheItem.contextValue,
                 actionContext

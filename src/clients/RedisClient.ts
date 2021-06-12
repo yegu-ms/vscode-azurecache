@@ -70,7 +70,7 @@ export class RedisClient {
                 if (typeof dbOrNodeId === 'string') {
                     // Arg is string, so interpret as cluster node ID
                     const clusterNodeClient = clusterClients?.get(dbOrNodeId);
-                    if (!clusterNodeClient) {
+                    if (clusterNodeClient === undefined) {
                         vscode.window.showErrorMessage(Strings.ErrorNotConnectToShard);
                         throw new Error(Strings.ErrorNotConnectToShard);
                     }
@@ -116,7 +116,7 @@ export class RedisClient {
         ignoreCache = false
     ): Promise<RedisClient> {
         const existingClient = this.clients.get(parsedRedisResource.resourceId);
-        if (!ignoreCache && existingClient) {
+        if (!ignoreCache && existingClient !== undefined) {
             return existingClient;
         }
 
@@ -128,7 +128,7 @@ export class RedisClient {
             },
             async () => {
                 // Dispose old client if exists
-                if (existingClient) {
+                if (existingClient !== undefined) {
                     try {
                         (await existingClient).getClient.disconnect();
                     } catch (e) {
@@ -138,7 +138,7 @@ export class RedisClient {
 
                 const { accessKey, cluster, hostName, port, sslPort, provisioningState } = parsedRedisResource;
                 const password = await accessKey;
-                if (typeof password === 'undefined') {
+                if (password === undefined) {
                     throw new Error(Strings.ErrorReadAccessKey);
                 }
 
@@ -152,7 +152,7 @@ export class RedisClient {
             }
         );
 
-        // Memoize client by resource ID
+        // Memorize client by resource ID
         this.clients.set(parsedRedisResource.resourceId, newRedisClient);
         return newRedisClient;
     }
@@ -242,7 +242,7 @@ export class RedisClient {
         // Called when Redis connection ends
         client.on('end', () => {
             ExtVars.outputChannel.appendLine('Redis connection ended');
-            if (pingInterval) {
+            if (pingInterval !== undefined) {
                 clearInterval(pingInterval);
                 pingInterval = undefined;
             }

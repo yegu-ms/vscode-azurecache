@@ -31,13 +31,13 @@ const onRenderHeader: IRenderFunction<IGroupHeaderProps> = (
     headerProps?: IGroupDividerProps,
     defaultRender?: IRenderFunction<IGroupHeaderProps>
 ) => {
-    if (!defaultRender) {
+    if (defaultRender === undefined) {
         return null;
     }
 
     // Make entire header togglable
     const onToggleSelectGroup = (): void => {
-        if (headerProps?.onToggleCollapse && headerProps?.group) {
+        if (headerProps?.onToggleCollapse !== undefined && headerProps?.group !== undefined) {
             headerProps.onToggleCollapse(headerProps.group);
         }
     };
@@ -53,13 +53,13 @@ const onRenderHeader: IRenderFunction<IGroupHeaderProps> = (
 };
 
 export function CollapsibleList(props: Props): React.ReactElement | null {
-    if (typeof props.values === 'undefined' || props.values.length === 0) {
+    if (props?.values === undefined || props?.values.length === 0) {
         return null;
     }
 
     const group = [
         {
-            count: props.values.length,
+            count: props?.values?.length,
             key: props.label,
             name: props.groupName,
             startIndex: 0,

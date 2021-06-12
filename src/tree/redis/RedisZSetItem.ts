@@ -53,7 +53,7 @@ export class RedisZSetItem extends KeyCollectionItem {
     /**
      * Loads additional sorted set elements as children by running the ZRANGE command and keeping track of the current cursor.
      */
-    public async loadNextChildren(clearCache: boolean): Promise<CollectionElement[]> {
+    public async loadMoreKeys(clearCache: boolean): Promise<CollectionElement[]> {
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
 
         if (clearCache) {
@@ -92,7 +92,7 @@ export class RedisZSetItem extends KeyCollectionItem {
         return collectionElements;
     }
 
-    public hasNextChildren(): boolean {
+    public hasMoreKeys(): boolean {
         return this.elementsShown !== this.length;
     }
 }

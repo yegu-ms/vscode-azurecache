@@ -30,7 +30,7 @@ export class TestRedisClient extends RedisClient {
     }
 
     public constructor(client?: IORedis.Redis | IORedis.Cluster) {
-        if (!client) {
+        if (client === undefined) {
             client = new IORedis();
             client.disconnect();
         }

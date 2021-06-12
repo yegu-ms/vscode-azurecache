@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { vscode } from '../vscode';
+import * as React from 'react';
 import {
     GroupedList,
     IGroup,
@@ -11,86 +12,96 @@ import {
     IRenderFunction,
     IStyle,
     DetailsRow,
+    SelectionZone,
     Selection,
     SelectionMode,
-    PrimaryButton,
-    getFocusStyle,
+    ActionButton,
+    Label,
+    Modal,
+    IconButton,
+    IButtonStyles,
+    IIconProps,
     getTheme,
     ITheme,
-    mergeStyleSets
+    mergeStyleSets,
+    IObjectWithKey,
+    FontWeights,
 } from '@fluentui/react';
-import * as React from 'react';
 import { CollectionWebviewData } from '../../src-shared/CollectionWebviewData';
 import { WebviewCommand } from '../../src-shared/WebviewCommand';
 import { WebviewMessage } from '../../src-shared/WebviewMessage';
-import { StrLoadMore } from '../Strings';
+import { StrTotal, StrContents, StrLoadMore, StrLoadingKeys } from '../Strings';
 import { SelectableCollectionElement } from './SelectableCollectionElement';
 import { CollectionElementValue } from '../../src-shared/CollectionElement';
 import { CollectionType } from './CollectionType';
-import { HashFilterField } from './HashFilterField';
 import { KeyContentsField } from './KeyContentsField';
 import './CollectionView.css';
 
 const theme: ITheme = getTheme();
-const { semanticColors, fonts } = theme;
 
-const classNames = mergeStyleSets({
-    itemSelected: {
-        background: 'var(--vscode-list-activeSelectionBackground)',
-        color: 'var(--vscode-list-activeSelectionForeground)',
-        selectors: {
-            '&:hover': { background: 'var(--vscode-list-activeSelectionBackground) !important' },
-        },
+const modalStyles = mergeStyleSets({
+    container: {
+        color: 'var(--vscode-peekViewTitleLabel-foreground)',
+        backgroundColor: 'var(--vscode-peekViewTitle-background)',
+        border: '2px',
+        borderColor: 'var(--vscode-peekView-border)',
+        width: '80%',
+        display: 'flex',
+        flexFlow: 'column nowrap',
+        alignItems: 'stretch',
     },
-    itemCell: [
-        getFocusStyle(theme, { inset: -1 }),
+    header: [
+        theme.fonts.large,
         {
-            backgroundColor: 'var(--vscode-list-background)',
-            color: 'var(--vscode-list-foreground)',
-            minHeight: 30,
-            padding: 5,
-            boxSizing: 'border-box',
+            flex: '1 1 auto',
+            borderTop: '3px solid var(--vscode-activitybar-activeBorder)',
             display: 'flex',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            fontSize: fonts.medium.fontSize,
-            selectors: {
-                '&:hover': {
-                    background: 'var(--vscode-list-inactiveSelectionBackground)',
-                    color: 'var(--vscode-list-foreground)'
-                },
-                '&:selection': { background: 'var(--vscode-list-activeSelectionForeground)' },
-            },
-            cursor: 'pointer',
+            alignItems: 'center',
+            fontWeight: FontWeights.semibold,
+            padding: '12px 12px 14px 12px',
         },
     ],
-    itemContent: {
-        marginLeft: 5,
-        overflow: 'hidden',
-        flexGrow: 1,
-    },
-    itemName: [
-        fonts.medium,
-        {
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            fontSize: fonts.medium.fontSize,
-        },
-    ],
-    itemIndex: {
-        fontSize: fonts.small.fontSize,
-        color: 'var(--vscode-editorHint-foreground)',
-    },
-    itemIndexSelected: {
-        color: 'var(--vscode-list-activeSelectionForeground)',
+    body: {
+        flex: '4 4 auto',
+        padding: '0 12px 6px 12px',
+        overflowY: 'hidden',
     },
 });
 
+const iconButtonStyles: Partial<IButtonStyles> = {
+    root: {
+        marginLeft: 'auto',
+        marginTop: '4px',
+        marginRight: '2px',
+    },
+    rootHovered: {
+        color: 'var(--vscode-peekViewTitleLabel-foreground)',
+        backgroundColor: 'var(--vscode-peekViewResult-background)',
+    },
+};
+
+const cancelIcon: IIconProps = {
+    iconName: 'Cancel',
+    styles: { root: { color: 'var(--vscode-peekViewTitleLabel-foreground)' } },
+};
+
+const columns: IColumn[] = [
+    {
+        key: 'id',
+        name: 'Id',
+        fieldName: 'id',
+        minWidth: 0,
+    },
+    {
+        key: 'value',
+        name: 'Value',
+        fieldName: 'value',
+        minWidth: 300,
+    },
+];
+
 interface State {
     title: string;
-    currentValue?: string;
     type?: CollectionType;
     key?: string;
     data: SelectableCollectionElement[];
@@ -98,23 +109,11 @@ interface State {
     items: CollectionElementValue[];
     size: number;
     hasMore: boolean;
+    currentKey: string;
+    currentValue?: string;
     isLoading: boolean;
+    isModalOpen: boolean;
 }
-
-const columns: IColumn[] = [
-    {
-        key: 'id',
-        name: 'Id',
-        fieldName: 'id',
-        minWidth: 0
-    },
-    {
-        key: 'value',
-        name: 'Value',
-        fieldName: 'value',
-        minWidth: 300
-    }
-];
 
 export class CollectionView extends React.Component<{}, State> {
     constructor(props: {}) {
@@ -126,7 +125,10 @@ export class CollectionView extends React.Component<{}, State> {
             groups: [],
             items: [],
             hasMore: false,
+            currentKey: '',
+            currentValue: '',
             isLoading: false,
+            isModalOpen: false,
         };
     }
 
@@ -134,25 +136,37 @@ export class CollectionView extends React.Component<{}, State> {
         // Listen for messages from extension
         window.addEventListener('message', (event) => {
             const message: WebviewMessage = event.data;
-            if (message.command === WebviewCommand.CollectionData) {
+            if (message.command === WebviewCommand.Title) {
+                const title = message.value as CollectionType;
+                this.setState({ title });
+            } else if (message.command === WebviewCommand.Loading) {
+                const status = message.value as boolean;
+                this.setState({ isLoading: status });
+            } else if (message.command === WebviewCommand.CollectionSize) {
+                const size = message.value as number;
+                this.setState({ size });
+            } else if (message.command === WebviewCommand.CollectionData) {
                 const { data, hasMore, clearCache } = message.value as CollectionWebviewData;
-                const selectableData = data.map((element) => ({
-                    element,
-                    selected: false,
-                    loading: false
-                } as SelectableCollectionElement));
+                const selectableData = data.map(
+                    (element) =>
+                        ({
+                            element,
+                            selected: false,
+                            loading: false,
+                        } as SelectableCollectionElement)
+                );
 
                 const groups: IGroup[] = [];
                 const items: CollectionElementValue[] = [];
                 let startIndex = 0;
                 selectableData.forEach((dataItem) => {
-                    const count = typeof dataItem.element.value != 'undefined' ? dataItem.element.value.length : 0;
+                    const count = dataItem.element.value !== undefined ? dataItem.element.value.length : 0;
                     groups.push({
                         key: dataItem.element.key,
-                        name: dataItem.element.key + (typeof dataItem.element.type !== 'undefined' ? ` (${dataItem.element.type})` : ''),
+                        name: dataItem.element.key + (dataItem.element.type ? ` (${dataItem.element.type})` : ''),
                         count,
                         startIndex,
-                        isCollapsed: true
+                        isCollapsed: true,
                     });
                     if (count > 0) {
                         dataItem.element.value?.map((value) => items.push(value));
@@ -166,22 +180,16 @@ export class CollectionView extends React.Component<{}, State> {
                     groups,
                     items,
                     hasMore,
-                    isLoading: false
+                    isLoading: false,
                 }));
-            } else if (message.command === WebviewCommand.Title) {
-                const title = message.value as CollectionType;
-                this.setState({ title });
             } else if (message.command === WebviewCommand.KeyName) {
                 const key = message.value as string;
                 this.setState({ key });
-            } else if (message.command === WebviewCommand.CollectionSize) {
-                const size = message.value as number;
-                this.setState({ size });
             }
         });
     }
 
-        /*
+    /*
     onRenderCell = (item: SelectableCollectionElement | undefined, index: number | undefined): JSX.Element | null => {
         if (!item || typeof index === 'undefined') {
             return null;
@@ -283,7 +291,7 @@ export class CollectionView extends React.Component<{}, State> {
         });
 
         // Treat empty string as 'match all'
-        if (!newValue) {
+        if (newValue === undefined) {
             newValue = '*';
         }
         vscode.postMessage({
@@ -293,26 +301,27 @@ export class CollectionView extends React.Component<{}, State> {
     };
 
     render(): JSX.Element | null {
-        const { currentValue, groups, items, hasMore, isLoading, title, size } = this.state;
+        const { groups, items, hasMore, isLoading, title, size, isModalOpen, currentKey, currentValue } = this.state;
+        const total = StrTotal.replace('$$$', String(size));
 
         const onRenderHeader = (
             headerProps?: IGroupDividerProps,
             defaultRender?: IRenderFunction<IGroupHeaderProps>
-        ) => {
-            if (!defaultRender) {
+        ): JSX.Element | null => {
+            if (defaultRender === undefined) {
                 return null;
             }
-        
+
             // Make entire header togglable
             const onToggleSelectGroup = (): void => {
                 if (headerProps?.onToggleCollapse && headerProps?.group) {
                     headerProps.onToggleCollapse(headerProps.group);
                 }
             };
-        
+
             // Hide header count
             const headerCountStyle: IStyle = { display: 'none' };
-        
+
             return (
                 <span>
                     {defaultRender({
@@ -323,56 +332,82 @@ export class CollectionView extends React.Component<{}, State> {
                 </span>
             );
         };
-        
-        const selection = new Selection();
 
-        const onRenderCell = (nestingDepth?: number, item?: CollectionElementValue, itemIndex?: number): JSX.Element | null => {
-            return item && typeof itemIndex === 'number' && itemIndex > -1 ? (
-                <DetailsRow
-                    className={classNames.itemCell}
-                    columns={columns}
-                    groupNestingDepth={nestingDepth}
-                    item={item}
-                    itemIndex={itemIndex}
-                    selection={selection}
-                    selectionMode={SelectionMode.none}
-                    compact={true}
-                />
-            ) : null;
+        const selection = new Selection();
+        selection.setItems(items);
+
+        const onRenderCell = (nestingDepth?: number, item?: CollectionElementValue, index?: number): JSX.Element => (
+            <DetailsRow
+                columns={columns}
+                groupNestingDepth={nestingDepth}
+                item={item}
+                itemIndex={index !== undefined ? index : 0}
+                selection={selection}
+                selectionMode={SelectionMode.none}
+                compact={true}
+            />
+        );
+
+        const onItemInvoked = (obj?: IObjectWithKey, _index?: number, _event?: Event): void => {
+            if (obj === undefined) {
+                return;
+            }
+
+            const item = obj! as CollectionElementValue;
+            this.setState({
+                currentKey: item.key,
+                currentValue: item.value!,
+                isModalOpen: true,
+            });
         };
-    
+
+        const hideModal = (): void => {
+            this.setState({ isModalOpen: false });
+        };
+
         return (
             <div className="dataviewer-container">
                 <h2>
-                    {title}
+                    {title} {size !== 0 && ` (${total})`}
                 </h2>
-                <h4 style={{ marginTop: 0, marginBottom: 5 }}>Size: {size}</h4>
-                {this.state.type === 'hash' && (
-                    <HashFilterField onChange={this.onFilterChanged} isLoading={isLoading} />
-                )}
 
                 <div className="list-container">
-                    <div
-                        className="list-view"
-                        onScroll={this.handleListScroll}
-                    >
-                        <GroupedList
-                            groups={groups}
-                            groupProps={{onRenderHeader}}
-                            items={items}
-                            onRenderCell={onRenderCell}
+                    <div className="list-view" onScroll={this.handleListScroll}>
+                        <SelectionZone
+                            selection={selection}
                             selectionMode={SelectionMode.none}
-                            compact={true}
-                        />
+                            onItemInvoked={onItemInvoked}
+                        >
+                            <GroupedList
+                                groups={groups}
+                                groupProps={{ onRenderHeader }}
+                                items={items}
+                                onRenderCell={onRenderCell}
+                                selection={selection}
+                                selectionMode={SelectionMode.none}
+                                compact={true}
+                            />
+                        </SelectionZone>
                     </div>
-                    <PrimaryButton
-                        disabled={!hasMore}
-                        text={StrLoadMore}
-                        style={{ marginLeft: 'auto', marginRight: 0, marginTop: 5, textAlign: 'right' }}
-                        onClick={this.loadMore}
-                    />
+                    {!isLoading && hasMore && (
+                        <ActionButton text={StrLoadMore} onClick={this.loadMore} disabled={!hasMore} />
+                    )}
+                    {isLoading && <Label>{StrLoadingKeys}</Label>}
+                    <Modal
+                        containerClassName={modalStyles.container}
+                        isOpen={isModalOpen}
+                        onDismiss={hideModal}
+                        isBlocking={false}
+                    >
+                        <div className={modalStyles.header}>
+                            <span>{StrContents.replace('$$$', currentKey)}</span>
+                            <IconButton styles={iconButtonStyles} iconProps={cancelIcon} onClick={hideModal} />
+                        </div>
+                        <div className={modalStyles.body}>
+                            <KeyContentsField value={currentValue} />
+                        </div>
+                    </Modal>
                 </div>
-                <KeyContentsField value={currentValue} />
             </div>
         );
     }

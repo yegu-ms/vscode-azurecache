@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { TextField } from '@fluentui/react';
 import * as React from 'react';
-import { StrContents } from '../Strings';
+import { Pivot, PivotItem, TextField } from '@fluentui/react';
+import { StrText, StrJson } from '../Strings';
 import './KeyContentsField.css';
 
 interface Props {
@@ -11,18 +11,27 @@ interface Props {
 }
 
 export function KeyContentsField(props: Props): React.ReactElement {
+    let json = {
+        a: 1,
+        b: 'xyz',
+    };
+    try {
+        json = JSON.parse(props.value!);
+        // eslint-disable-next-line no-empty
+    } catch {}
+
     return (
         <div className="content-container">
-            <TextField
-                className="contents-field"
-                inputClassName="contents-input"
-                label={StrContents}
-                multiline
-                autoAdjustHeight
-                readOnly
-                value={props.value}
-                resizable={false}
-            />
+            <Pivot>
+                <PivotItem headerText={StrText}>
+                    <TextField readOnly multiline value={props.value} resizable={false} />
+                </PivotItem>
+                {json && Object.keys(json).length !== 0 && (
+                    <PivotItem headerText={StrJson}>
+                        <TextField readOnly multiline value={JSON.stringify(json, null, 4)} resizable={false} />
+                    </PivotItem>
+                )}
+            </Pivot>
         </div>
     );
 }

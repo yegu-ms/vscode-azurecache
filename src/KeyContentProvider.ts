@@ -35,7 +35,7 @@ export class KeyContentProvider implements vscode.TextDocumentContentProvider {
             // Parse URI to get the cache's resource ID and key information
             const { db, key, type, subkey } = decodeUri(uri);
 
-            if (!this.currentResource) {
+            if (this.currentResource === undefined) {
                 throw new Error(Strings.ErrorCurrentResource);
             }
 
@@ -51,7 +51,7 @@ export class KeyContentProvider implements vscode.TextDocumentContentProvider {
                 value = await client.lindex(key, parseInt(subkey), db);
             } else if (type === 'hash' || type === 'set' || type === 'zset') {
                 // For hash, set, and sorted set types, the key value must already be set in currentValue
-                if (typeof this.currentValue === 'undefined') {
+                if (this.currentValue === undefined) {
                     throw new Error(Strings.ErrorCurrentValue);
                 }
                 value = this.currentValue;

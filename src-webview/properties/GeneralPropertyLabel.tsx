@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function GeneralPropertyLabel(props: Props): React.ReactElement | null {
-    if (typeof props.value === 'undefined') {
+    if (props.value === undefined) {
         return null;
     }
 

@@ -16,6 +16,7 @@ import { ExtVars } from '../../ExtensionVariables';
 import { ParsedRedisResource } from '../../../src-shared/ParsedRedisResource';
 import { ErrorEmptyCache } from '../../Strings';
 import * as ResourceUtils from '../../utils/ResourceUtils';
+import { DataFilterParentItem, FilterableItem } from '../DataFilterParentItem';
 import { KeyFilterItem } from '../filter/KeyFilterItem';
 import { KeyFilterParentItem } from '../KeyFilterParentItem';
 import { RedisClusterNodeItem } from '../redis/RedisClusterNodeItem';
@@ -26,11 +27,12 @@ import path = require('path');
 /**
  * Tree item for an Azure cache.
  */
-export class AzureCacheClusterItem extends AzureParentTreeItem implements KeyFilterParentItem {
+export class AzureCacheClusterItem extends AzureParentTreeItem implements DataFilterParentItem, KeyFilterParentItem {
     public static contextValue = 'redisCache';
     private static commandId = 'azureCache.viewCacheProps';
 
     private filters = ['*'];
+    private dbs: FilterableItem[] = [];
     private webview: CachePropsWebview;
     // When the filter expression changes for a clustered cache, use emitter to notify the child tree items.
     private onFilterChangeEmitter = new vscode.EventEmitter<void>();
@@ -76,7 +78,7 @@ export class AzureCacheClusterItem extends AzureParentTreeItem implements KeyFil
 
         for (const nodeId of clusterNodeIds) {
             const port = (await client.getClusterNodeOptions(nodeId)).port;
-            if (port) {
+            if (port !== undefined) {
                 treeItems.push(new RedisClusterNodeItem(this, this.onFilterChangeEmitter, nodeId, port));
             }
         }
@@ -112,6 +114,18 @@ export class AzureCacheClusterItem extends AzureParentTreeItem implements KeyFil
         this.parsedRedisResource = await this.resClient.getRedisResourceByName(resourceGroup, name);
         // Refresh webview (if open) with the new ParsedRedisResource
         await this.webview.refresh(this.parsedRedisResource);
+    }
+
+    public setDataFilters(items: FilterableItem[]) {
+        this.dbs = items;
+    }
+
+    public getDataFilters(): FilterableItem[] {
+        return this.dbs;
+    }
+
+    public getSelectedDataFilters(): FilterableItem[] {
+        return this.dbs.filter(item => item.selected);
     }
 
     public addKeyFilter(filterExpr: string): number {

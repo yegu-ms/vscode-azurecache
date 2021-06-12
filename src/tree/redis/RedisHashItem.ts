@@ -54,7 +54,7 @@ export class RedisHashItem extends KeyCollectionItem implements KeyFilterParentI
     /**
      * Loads additional hash elements as children by running the HSCAN command and keeping track of the current cursor.
      */
-    public async loadNextChildren(clearCache: boolean): Promise<CollectionElement[]> {
+    public async loadMoreKeys(clearCache: boolean): Promise<CollectionElement[]> {
         if (clearCache) {
             this.scanCursor = '0';
         }
@@ -100,7 +100,7 @@ export class RedisHashItem extends KeyCollectionItem implements KeyFilterParentI
         return collectionElements;
     }
 
-    public hasNextChildren(): boolean {
+    public hasMoreKeys(): boolean {
         return typeof this.scanCursor === 'string';
     }
 

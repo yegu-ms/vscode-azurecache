@@ -11,7 +11,7 @@ import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
  */
 export async function getConnectionString(parsedRedisResource: ParsedRedisResource): Promise<string | undefined> {
     const accessKey = await parsedRedisResource.accessKey;
-    if (!accessKey) {
+    if (accessKey === undefined) {
         return undefined;
     }
 

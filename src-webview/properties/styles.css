@@ -12,6 +12,41 @@
     margin-left: 8px;
 }
 
+.ms-Pivot {
+    margin-bottom: 12px;
+}
+
+.ms-Pivot-link {
+    font-size: medium;
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.ms-Pivot-link:hover {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-DetailsHeader {
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-DetailsHeader-cellTitle {
+    color: var(--vscode-editor-foreground);
+}
+
+.ms-DetailsHeader:hover .ms-DetailsHeader-cellTitle {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-DetailsRow {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
 .ms-Label {
     color: var(--vscode-editor-foreground);
 }

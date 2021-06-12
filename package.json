@@ -91,7 +91,7 @@
                 },
                 {
                     "command": "azureCache.selectDatabases",
-                    "when": "view == azureCache && viewItem == redisCache",
+                    "when": "view == azureCache && viewItem == redisDbFilter",
                     "group": "inline"
                 },
                 {
@@ -170,7 +170,7 @@
                 "command": "azureCache.selectSubscriptions",
                 "title": "Select Subscriptions...",
                 "category": "Azure Cache",
-                "icon": "$(checklist)"
+                "icon": "$(filter)"
             },
             {
                 "command": "azureCache.refresh",
@@ -186,7 +186,7 @@
                 "command": "azureCache.selectDatabases",
                 "title": "Select Databases...",
                 "category": "Azure Cache",
-                "icon": "$(checklist)"
+                "icon": "$(filter)"
             },
             {
                 "command": "azureCache.addKeyFilter",
@@ -277,7 +277,7 @@
         "ts-loader": "^7.0.5",
         "ts-sinon": "^1.2.0",
         "typescript": "^3.9.7",
-        "vsce": "^1.91.0",
+        "vsce": "^1.93.0",
         "vscode-test": "^1.4.0",
         "webpack": "^4.44.1",
         "webpack-cli": "^3.3.12"

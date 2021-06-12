@@ -14,21 +14,18 @@ import { WebviewView } from '../../src-shared/WebviewView';
  * Webview for viewing collection type keys (lists, hashes, sets, zsets).
  */
 export class CollectionWebview extends BaseWebview {
-    protected viewType = this.type;
-
-    constructor(private readonly parent: KeyCollectionItem, private readonly type: string) {
+    constructor(private readonly parent: KeyCollectionItem, protected readonly viewType: string) {
         super();
     }
 
-    /**
-     * Sends all the necessary data for the Cache Properties view.
-     * @param parsedRedisResource The Redis resource
-     */
-    protected async sendData(): Promise<void> {
-        this.postMessage(WebviewCommand.View, WebviewView.CollectionKey);
-        this.postMessage(WebviewCommand.Title, this.parent.title);
+    protected async initView(): Promise<void> {
+        this.postMessage(WebviewCommand.View, WebviewView.KeyCollection);
+        this.postMessage(WebviewCommand.Title, this.parent.label);
+    }
+
+    public async initData(): Promise<void> {
         this.postMessage(WebviewCommand.CollectionSize, await this.parent.getSize());
-        await this.loadAndSendNextChildren(true);
+        this.loadAndSendNextChildren(true);
     }
 
     /**
@@ -52,34 +49,14 @@ export class CollectionWebview extends BaseWebview {
     }
 
     /**
-     * Sends the next batch of collection elements to the webview.
-     * @param clearCache Whether to load from the beginning
-     */
-    private async loadAndSendNextChildren(clearCache: boolean): Promise<void> {
-        const elements = await this.parent.loadNextChildren(clearCache);
-        const hasMore = this.parent.hasNextChildren();
-        const collectionData = {
-            data: elements,
-            clearCache,
-            hasMore,
-        } as CollectionWebviewData;
-        this.postMessage(WebviewCommand.CollectionData, collectionData);
-    }
-
-    /**
      * Refreshes the webview by re-sending collection elements to the webview.
      */
-    public async refresh(): Promise<void> {
-        if (this.webviewPanel) {
-            const elements = await this.parent.loadNextChildren(true);
-            const hasMore = this.parent.hasNextChildren();
-            const collectionData = {
-                data: elements,
-                clearCache: true,
-                hasMore,
-            } as CollectionWebviewData;
-            this.postMessage(WebviewCommand.CollectionData, collectionData);
+     public async refresh(): Promise<void> {
+        if (this.webviewPanel === undefined) {
+            return;
         }
+
+        this.initData();
     }
 
     /**
@@ -88,6 +65,25 @@ export class CollectionWebview extends BaseWebview {
     protected onDidDispose(): void {
         if (this.parent instanceof RedisHashItem) {
             this.parent.reset();
+        }
+    }
+
+    /**
+     * Sends the next batch of collection elements to the webview.
+     * @param clearCache Whether to load from the beginning
+     */
+    private async loadAndSendNextChildren(clearCache: boolean): Promise<void> {
+        if (this.webviewPanel !== undefined) {
+            this.postMessage(WebviewCommand.Loading, true);
+            const elements = await this.parent.loadMoreKeys(clearCache);
+            const hasMore = this.parent.hasMoreKeys();
+            const collectionData = {
+                data: elements,
+                clearCache,
+                hasMore
+            } as CollectionWebviewData;
+            this.postMessage(WebviewCommand.CollectionData, collectionData);
+            this.postMessage(WebviewCommand.Loading, false);
         }
     }
 }

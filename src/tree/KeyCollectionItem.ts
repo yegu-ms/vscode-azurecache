@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { AzExtTreeItem } from 'vscode-azureextensionui';
-import { CollectionElement, CollectionElementValue } from '../../src-shared/CollectionElement';
+import { CollectionElement } from '../../src-shared/CollectionElement';
 import { CollectionWebview } from '../webview/CollectionWebview';
 import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
 import { AzureCacheItem } from './azure/AzureCacheItem';
@@ -16,32 +16,28 @@ export abstract class KeyCollectionItem extends AzExtTreeItem {
      * The Redis resource that the key is in.
      */
     readonly parsedRedisResource: ParsedRedisResource;
-    /**
-     * The DB number the key is in. For clustered caches this is undefined.
-     */
-    readonly db: number;
+
     /**
      * The associated webview.
      */
     protected abstract readonly webview: CollectionWebview;
 
-    constructor(readonly parent: AzureCacheItem | AzureCacheClusterItem, readonly title: string) {
+    constructor(readonly parent: AzureCacheItem | AzureCacheClusterItem) {
         super(parent);
         this.parsedRedisResource = parent.parsedRedisResource;
-        //this.db = parent.db;
-        this.db = 0;
     }
 
     public showWebview(): Promise<void> {
-        return this.webview.reveal(this.title);
+        return this.webview.reveal(this.label, null);
     }
 
     public refreshImpl(): Promise<void> {
         return this.webview.refresh();
     }
 
+    public abstract refreshDataSet(): Promise<void>;
     public abstract getSize(): Promise<number>;
-    public abstract hasNextChildren(): boolean;
-    public abstract loadNextChildren(clearCache: boolean): Promise<CollectionElement[]>;
+    public abstract loadMoreKeys(clearCache: boolean): Promise<CollectionElement[]>;
+    public abstract hasMoreKeys(): boolean;
     public abstract loadKeyValue(element: CollectionElement): Promise<CollectionElement>;
 }

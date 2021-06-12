@@ -6,6 +6,7 @@ export enum WebviewCommand {
     View = 'view',
     // Cache Properties
     ParsedRedisResource = 'parsedRedisResource',
+    RedisInfo = 'redisInfo',
     AccessKey = 'accessKey',
     ConnectionString = 'connectionString',
     CopyText = 'copyText',
@@ -18,4 +19,5 @@ export enum WebviewCommand {
     FilterChange = 'filterChange',
     GetValue = 'loadKeyValue',
     LoadMore = 'loadMore',
+    Loading = 'loading'
 }

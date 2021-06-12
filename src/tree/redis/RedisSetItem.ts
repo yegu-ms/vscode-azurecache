@@ -52,7 +52,7 @@ export class RedisSetItem extends KeyCollectionItem {
     /**
      * Loads additional set elements as children by running the SSCAN command and keeping track of the current cursor.
      */
-    public async loadNextChildren(clearCache: boolean): Promise<CollectionElement[]> {
+    public async loadMoreKeys(clearCache: boolean): Promise<CollectionElement[]> {
         if (clearCache) {
             this.scanCursor = '0';
         }
@@ -83,7 +83,7 @@ export class RedisSetItem extends KeyCollectionItem {
         return collectionElements;
     }
 
-    public hasNextChildren(): boolean {
+    public hasMoreKeys(): boolean {
         return typeof this.scanCursor === 'string';
     }
 }

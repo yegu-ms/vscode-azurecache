@@ -3,13 +3,12 @@
 
 import { ThemeIcon } from 'vscode';
 import { TreeItemIconPath } from 'vscode-azureextensionui';
-import { AzureCacheItem } from '../azure/AzureCacheItem';
-import { AzureCacheClusterItem } from '../azure/AzureCacheClusterItem';
+import { AzureCacheItem, ClusterNode } from '../azure/AzureCacheItem';
 import { KeyCollectionItem } from '../KeyCollectionItem';
 import { CollectionElement, CollectionElementValue } from '../../../src-shared/CollectionElement';
 import { CollectionWebview } from '../../webview/CollectionWebview';
 import { RedisClient } from '../../clients/RedisClient';
-import { StrKeyFilter } from '../../Strings';
+import { StrAllKeys, StrKeyFilter } from '../../Strings';
 
 /**
  * Tree item for a key filter, which is used in two situations:
@@ -21,14 +20,18 @@ export class KeyFilterItem extends KeyCollectionItem {
     private static readonly contextValue = 'keyFilterItem';
     private static readonly commandId = 'azureCache.viewFilteredKeys';
 
-    protected webview: CollectionWebview = new CollectionWebview(this, 'filteredKeys');
+    protected webview: CollectionWebview;
 
-    private filterIndex: number;
-    private scanCursor?: string = '0';
+    private filter: string;
+    private dbs: number[] = [];
+    private nodes: ClusterNode[] = [];
+    private currentSelection = 0;
+    private scanCursor = '0';
 
-    constructor(readonly parent: AzureCacheItem | AzureCacheClusterItem, readonly index: number = 0) {
-        super(parent, `${StrKeyFilter} ${parent.getKeyFilter(index)}`);
-        this.filterIndex = index;
+    constructor(readonly parent: AzureCacheItem, readonly index: number, readonly pattern: string) {
+        super(parent);
+        this.filter = pattern;
+        this.webview = new CollectionWebview(this, 'filteredKeys');
     }
 
     get commandId(): string {
@@ -48,27 +51,49 @@ export class KeyFilterItem extends KeyCollectionItem {
     }
 
     get label(): string {
-        return this.title;
+        return this.filter === '*' ? StrAllKeys : StrKeyFilter.replace('$$$', this.filter);
+    }
+
+    public getFilter(): string {
+        return this.filter;
+    }
+
+    public setFilter(filter: string): void {
+        if (this.filter !== filter) {
+            this.filter = filter;
+            this.parent.updateKeyFilter(this.index, filter);
+            this.webview.setTitle(this.label);
+            this.webview.refresh();
+        }
+    }
+
+    public async refreshDataSet(): Promise<void> {
+        if (!this.parent.parsedRedisResource.cluster) {
+            this.dbs = (this.parent as AzureCacheItem).getSelectedDbs();
+        }
+        this.currentSelection = 0;
+        this.scanCursor = '0';
     }
 
     public async getSize(): Promise<number> {
-        const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
-        return client.dbsize(this.db);
-    }
+        if (this.filter === '*') {
+            const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
+            const counts: number[] = await Promise.all(this.dbs.map(async (db) => client.dbsize(db)));
+            return counts.length ? counts.reduce((total, current) => total + current) : 0;
+        }
 
-    public hasNextChildren(): boolean {
-        return typeof this.scanCursor === 'string';
+        return 0;
     }
 
     /**
      * Loads additional set elements as children by running the SSCAN command and keeping track of the current cursor.
      */
-    public async loadNextChildren(clearCache: boolean): Promise<CollectionElement[]> {
+    public async loadMoreKeys(clearCache: boolean): Promise<CollectionElement[]> {
         if (clearCache) {
-            this.scanCursor = '0';
+            await this.refreshDataSet();
         }
-
-        if (typeof this.scanCursor === 'undefined') {
+        
+        if (!this.hasMoreKeys()) {
             return [];
         }
         
@@ -79,13 +104,19 @@ export class KeyFilterItem extends KeyCollectionItem {
         let scannedKeys: string[] = [];
 
         do {
-            [curCursor, scannedKeys] = await client.scan(curCursor, 'MATCH', this.parent.getKeyFilter(this.filterIndex), this.db);
+            [curCursor, scannedKeys] = await client.scan(curCursor, 'MATCH', this.filter, this.dbs[this.currentSelection]);
         } while (curCursor !== '0' && scannedKeys.length === 0);
 
-        this.scanCursor = curCursor === '0' ? undefined : curCursor;
+        if (curCursor === '0') {
+            this.currentSelection += 1;
+            this.scanCursor = '0';
+        } else {
+            this.scanCursor = curCursor;
+        }
+
         const collectionElements = await Promise.all(scannedKeys.map(async (key) => {
-            const type = await this.getKeyType(client, this.db, key);
-            const value = await this.getKeyValue(client, this.db, key, type);
+            const type = await this.getKeyType(client, this.dbs[this.currentSelection], key);
+            const value = await this.getKeyValue(client, this.dbs[this.currentSelection], key, type);
             return {
                 key,
                 type,
@@ -96,15 +127,24 @@ export class KeyFilterItem extends KeyCollectionItem {
         return collectionElements;
     }
 
+    public hasMoreKeys(): boolean {
+        if ((!this.parsedRedisResource.cluster && this.currentSelection >= this.dbs.length) ||
+            (this.parsedRedisResource.cluster && this.currentSelection >= this.nodes.length)) {
+            return false;
+        }
+
+        return true;
+    }
+
     public async loadKeyValue(element: CollectionElement): Promise<CollectionElement> {
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
 
         let type = element.type;
-        if (typeof type === 'undefined') {
-            type = await this.getKeyType(client, this.db, element.key);
+        if (type === undefined) {
+            type = await this.getKeyType(client, this.dbs[this.currentSelection], element.key);
         }
 
-        const value = await this.getKeyValue(client, this.db, element.key, type);
+        const value = await this.getKeyValue(client, this.dbs[this.currentSelection], element.key, type);
 
         return {
             ...element,

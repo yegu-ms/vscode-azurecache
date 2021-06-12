@@ -68,17 +68,17 @@ describe('CollectionItems', () => {
                 .resolves(Array.from(Array(5).keys()).map((num) => (num + 10).toString()));
 
             const listItem = new RedisListItem(testDb, 'mylist');
-            let childItems = await listItem.loadNextChildren(true);
+            let childItems = await listItem.loadMoreKeys(true);
             assert.strictEqual(childItems.length, 10);
             assert.strictEqual(childItems[0].key, '0');
-            assert(listItem.hasNextChildren());
+            assert(listItem.hasMoreKeys());
 
             // Load last batch of child elements
-            childItems = await listItem.loadNextChildren(false);
+            childItems = await listItem.loadMoreKeys(false);
             assert.strictEqual(childItems.length, 5);
             // The label value should continue from previously loaded elements
             assert.strictEqual(childItems[0].key, '10');
-            assert(!listItem.hasNextChildren());
+            assert(!listItem.hasMoreKeys());
         });
 
         it('should return zero elements if empty', async () => {
@@ -89,9 +89,9 @@ describe('CollectionItems', () => {
 
             const listItem = new RedisListItem(testDb, 'mylist');
 
-            const childItems = await listItem.loadNextChildren(true);
+            const childItems = await listItem.loadMoreKeys(true);
             assert.strictEqual(childItems.length, 0);
-            assert(!listItem.hasNextChildren());
+            assert(!listItem.hasMoreKeys());
         });
     });
 
@@ -118,17 +118,17 @@ describe('CollectionItems', () => {
             const hashItem = new RedisHashItem(testDb, 'myhash');
 
             // Should load first 10 hash values
-            let childItems = await hashItem.loadNextChildren(true);
+            let childItems = await hashItem.loadMoreKeys(true);
             assert.strictEqual(childItems.length, 10);
             assert.strictEqual(childItems[0].id, 'f1');
             assert.strictEqual(childItems[9].id, 'f10');
-            assert(hashItem.hasNextChildren());
+            assert(hashItem.hasMoreKeys());
 
             // Should load the last remaining element
-            childItems = await hashItem.loadNextChildren(false);
+            childItems = await hashItem.loadMoreKeys(false);
             assert.strictEqual(childItems.length, 1);
             assert.strictEqual(childItems[0].id, 'f11');
-            assert(!hashItem.hasNextChildren());
+            assert(!hashItem.hasMoreKeys());
         });
 
         it('should return zero elements if empty', async () => {
@@ -140,9 +140,9 @@ describe('CollectionItems', () => {
             sandbox.stub(stubRedisClient, 'hscan').withArgs('myhash', '0', 'MATCH', '*', 0).resolves(scanRes);
 
             const hashItem = new RedisHashItem(testDb, 'myhash');
-            const childItems = await hashItem.loadNextChildren(true);
+            const childItems = await hashItem.loadMoreKeys(true);
             assert.strictEqual(childItems.length, 0);
-            assert(!hashItem.hasNextChildren());
+            assert(!hashItem.hasMoreKeys());
         });
 
         it('should properly restore scan cursor when reset', async () => {
@@ -154,11 +154,11 @@ describe('CollectionItems', () => {
             sandbox.stub(stubRedisClient, 'hscan').withArgs('myhash', '0', 'MATCH', '*', 0).resolves(scanRes);
 
             const hashItem = new RedisHashItem(testDb, 'myhash');
-            await hashItem.loadNextChildren(true);
+            await hashItem.loadMoreKeys(true);
 
-            assert(!hashItem.hasNextChildren());
+            assert(!hashItem.hasMoreKeys());
             hashItem.reset();
-            assert(hashItem.hasNextChildren());
+            assert(hashItem.hasMoreKeys());
         });
 
         it('should properly handle filter change and reset', () => {
@@ -190,17 +190,17 @@ describe('CollectionItems', () => {
             const setItem = new RedisSetItem(testDb, 'myset');
 
             // First call should load minimum 10 elements
-            let childItems = await setItem.loadNextChildren(true);
+            let childItems = await setItem.loadMoreKeys(true);
             assert.strictEqual(childItems.length, 10);
             assert.strictEqual(childItems[0].key, 'A');
             assert.strictEqual(childItems[9].key, 'J');
-            assert(setItem.hasNextChildren());
+            assert(setItem.hasMoreKeys());
 
             // Next call should load last remaining element
-            childItems = await setItem.loadNextChildren(false);
+            childItems = await setItem.loadMoreKeys(false);
             assert.strictEqual(childItems.length, 1);
             assert.strictEqual(childItems[0].key, 'K');
-            assert(!setItem.hasNextChildren());
+            assert(!setItem.hasMoreKeys());
         });
 
         it('should return zero elements if empty', async () => {
@@ -212,9 +212,9 @@ describe('CollectionItems', () => {
             sandbox.stub(stubRedisClient, 'sscan').withArgs('myset', '0', 'MATCH', '*', 0).resolves(scanRes);
 
             const setItem = new RedisSetItem(testDb, 'myset');
-            const childItems = await setItem.loadNextChildren(true);
+            const childItems = await setItem.loadMoreKeys(true);
             assert.strictEqual(childItems.length, 0);
-            assert(!setItem.hasNextChildren());
+            assert(!setItem.hasMoreKeys());
         });
     });
 
@@ -237,21 +237,21 @@ describe('CollectionItems', () => {
 
             const zsetItem = new RedisZSetItem(testDb, 'myzset');
 
-            let childItems = await zsetItem.loadNextChildren(true);
+            let childItems = await zsetItem.loadMoreKeys(true);
             assert.strictEqual(childItems.length, 10);
             assert.strictEqual(childItems[0].id, '0');
             assert.strictEqual(childItems[0].key, 'A');
             assert.strictEqual(childItems[9].id, '9');
             assert.strictEqual(childItems[9].key, 'J');
-            assert(zsetItem.hasNextChildren());
+            assert(zsetItem.hasMoreKeys());
 
             // Load last remaining element
-            childItems = await zsetItem.loadNextChildren(false);
+            childItems = await zsetItem.loadMoreKeys(false);
             assert.strictEqual(childItems.length, 1);
             // The label value should continue from previously loaded elements
             assert.strictEqual(childItems[0].id, '10');
             assert.strictEqual(childItems[0].key, 'K');
-            assert(!zsetItem.hasNextChildren());
+            assert(!zsetItem.hasMoreKeys());
             // ZCARD should only be called once, when 'clearCache' set to true
             assert(zcardStub.calledOnce);
         });
@@ -265,10 +265,10 @@ describe('CollectionItems', () => {
 
             const zsetItem = new RedisZSetItem(testDb, 'myzset');
 
-            const childItems = await zsetItem.loadNextChildren(true);
+            const childItems = await zsetItem.loadMoreKeys(true);
             assert(zrangeStub.notCalled);
             assert.strictEqual(childItems.length, 0);
-            assert(!zsetItem.hasNextChildren());
+            assert(!zsetItem.hasMoreKeys());
         });
     });
 });

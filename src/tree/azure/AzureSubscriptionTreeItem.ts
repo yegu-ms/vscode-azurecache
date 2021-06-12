@@ -31,15 +31,13 @@ export class AzureSubscriptionTreeItem extends SubscriptionTreeItemBase {
         const rmClient = createAzureClient(this.root, RedisManagementClient);
         const resClient = new RedisResourceClient(rmClient);
         const redisCollection: ParsedRedisListResult =
-            typeof this.nextLink === 'undefined'
+            !this.nextLink
                 ? await resClient.listResources()
                 : await resClient.listNextResources(this.nextLink);
         this.nextLink = redisCollection.nextLink;
 
         return redisCollection.map((parsedRedisResource) =>
-            !parsedRedisResource.cluster
-            ? new AzureCacheItem(this, resClient, parsedRedisResource)
-            : new AzureCacheClusterItem(this, resClient, parsedRedisResource)
+            new AzureCacheItem(this, resClient, parsedRedisResource)
         );
     }
 }

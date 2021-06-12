@@ -16,6 +16,7 @@ interface Props {
     id: string;
     label?: string;
     value?: string | number;
+    type?: string;
 }
 
 const tooltipProps = { gapSpace: 0 };
@@ -30,7 +31,7 @@ export class CopyableTextField extends React.Component<Props, State> {
     };
 
     onClick = (): void => {
-        if (this.props.value) {
+        if (this.props.value !== undefined) {
             vscode.postMessage({
                 command: WebviewCommand.CopyText,
                 value: this.props.value.toString(),
@@ -46,7 +47,7 @@ export class CopyableTextField extends React.Component<Props, State> {
     };
 
     render(): JSX.Element | null {
-        if (typeof this.props.value === 'undefined') {
+        if (this.props.value === undefined) {
             return null;
         }
 
@@ -56,7 +57,21 @@ export class CopyableTextField extends React.Component<Props, State> {
         return (
             <Stack horizontal tokens={stackTokens}>
                 <Stack.Item grow align="end">
-                    <TextField label={this.props.label} readOnly value={value} />
+                    {
+                        this.props.type !== 'password' ? (
+                            <TextField
+                                label={this.props.label}
+                                readOnly value={value}
+                            />
+                        ) : (
+                            <TextField
+                                label={this.props.label}
+                                readOnly value={value}
+                                type="password"
+                                canRevealPassword
+                            />
+                        )
+                    }
                 </Stack.Item>
                 <Stack.Item align="end">
                     <TooltipHost

@@ -41,7 +41,7 @@ class Index extends React.Component<{}, State> {
 
         if (type === WebviewView.CacheProperties) {
             return <CacheProperties />;
-        } else if (type === WebviewView.CollectionKey) {
+        } else if (type === WebviewView.KeyCollection) {
             return <CollectionView />;
         } else {
             return null;

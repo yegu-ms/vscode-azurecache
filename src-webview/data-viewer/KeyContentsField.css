@@ -7,14 +7,32 @@
     flex: 1;
 }
 
-.contents-field {
-    margin-bottom: 10px;
+.ms-Pivot {
+    margin-bottom: 12px;
 }
 
-.contents-input {
+.ms-Pivot-link {
+    font-size: medium;
+    color: var(--vscode-peekViewTitleLabel-foreground);
+    background-color: var(--vscode-peekViewTitle-background);
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.ms-Pivot-link:hover {
+    color: var(--vscode-peekViewTitleLabel-foreground);
+    background-color: var(--vscode-peekViewTitle-background);
+}
+
+.ms-TextField-field {
+    color: var(--vscode-peekViewTitleLabel-foreground);
+    background-color: var(--vscode-peekViewTitle-background);
     font-family: var(--vscode-editor-font-family);
+    border-color: var(--vscode-peekViewTitleLabel-foreground);
     overflow-y: auto;
-    resize: vertical;
-    max-height: 50vh;
-    height: 30vh;
+    height: 29vh;
+}
+
+.ms-TextField-field:hover {
+    border-color: var(--vscode-peekViewTitleLabel-foreground);
 }

@@ -1,19 +1,19 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { ThemeIcon } from 'vscode';
-import { AzExtTreeItem, TreeItemIconPath, AzExtParentTreeItem } from 'vscode-azureextensionui';
+import { QuickPickItem, ThemeIcon } from 'vscode';
+import { AzExtTreeItem, TreeItemIconPath } from 'vscode-azureextensionui';
+import { AzureCacheItem } from '../azure/AzureCacheItem';
+import { SelectableItem } from '../DataFilterParentItem';
 import { StrDatabaseAbbrv } from '../../Strings';
-import { DataFilterParentItem } from '../DataFilterParentItem';
 
 /**
  * Tree item for a database in a non-clustered cache.
  */
 export class RedisDbFilterItem extends AzExtTreeItem {
     private static readonly contextValue = 'redisDbFilter';
-    private static readonly commandId = 'azureCache.setDbFilter';
 
-    constructor(readonly parent: AzExtParentTreeItem & DataFilterParentItem) {
+    constructor(readonly parent: AzureCacheItem) {
         super(parent);
     }
 
@@ -22,10 +22,27 @@ export class RedisDbFilterItem extends AzExtTreeItem {
     }
 
     get iconPath(): TreeItemIconPath {
-        return new ThemeIcon('filter');
+        return new ThemeIcon('database');
     }
 
     get label(): string {
-        return `${StrDatabaseAbbrv} ${this.parent.getDataFilterList().join(', ')}`;
+        const selectedDbs = this.parent.getSelectedDataFilters().map(item => item.id);
+        return `*${StrDatabaseAbbrv} ${selectedDbs.join(', ')}`;
+    }
+
+    public getDbSelections(): QuickPickItem[] {
+        return this.parent.getDataFilters().map(item => ({
+            label: `${StrDatabaseAbbrv} ${item.id}`,
+            picked: item.selected
+        } as QuickPickItem));
+    }
+
+    public setDbSelections(picks: QuickPickItem[]): void {
+        if (picks.length > 0) {
+            this.parent.setDataFilters(picks.map(pick => ({
+                id: Number(pick.label.replace(`${StrDatabaseAbbrv} `, '')),
+                selected: pick.picked
+            } as SelectableItem)));
+        }
     }
 }

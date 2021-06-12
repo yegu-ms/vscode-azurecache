@@ -9,26 +9,26 @@ import { ErrorEmptyInput } from './Strings';
  *
  * @param defaultValue Default value
  * @param prompt Input prompt text
- * @param placeholder placeholder text
+ * @param placeholder Placeholder text
  */
 export async function textInput(
     defaultValue: string | undefined,
     prompt: string,
-    placeholder: string
+    placeHolder: string
 ): Promise<string | undefined> {
     const val = await vscode.window.showInputBox({
         ignoreFocusOut: true,
-        prompt: prompt,
-        placeHolder: placeholder,
+        prompt,
+        placeHolder,
         validateInput: (val: string) => {
-            if (val) {
+            if (val !== undefined) {
                 return null;
             }
             return ErrorEmptyInput;
         },
     });
 
-    if (typeof val === 'undefined') {
+    if (val === undefined) {
         return val;
     }
 

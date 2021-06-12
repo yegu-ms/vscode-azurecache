@@ -19,8 +19,9 @@ export abstract class BaseWebview {
      * To be implemented by subclasses.
      */
     protected abstract readonly viewType: string;
-    public abstract async refresh(data: unknown): Promise<void>;
-    protected abstract async sendData(data: unknown): Promise<void>;
+    public abstract refresh(data: unknown): Promise<void>;
+    protected abstract initView(): Promise<void>;
+    public abstract initData(data: unknown): Promise<void>;
     protected abstract onDidReceiveMessage(message: WebviewMessage): void;
     protected onDidDispose?(): void;
 
@@ -30,8 +31,8 @@ export abstract class BaseWebview {
      * @param title Title of webview
      * @param data Initial data to be sent to the webview
      */
-    public async reveal(title: string, data?: unknown): Promise<void> {
-        if (this.webviewPanel) {
+    public async reveal(title: string, data: unknown): Promise<void> {
+        if (this.webviewPanel !== undefined) {
             try {
                 // Show webview panel if it exists
                 this.webviewPanel.reveal();
@@ -48,13 +49,6 @@ export abstract class BaseWebview {
     }
 
     /**
-     * Disposes the webview.
-     */
-    public dispose(): void {
-        this.webviewPanel?.dispose();
-    }
-
-    /**
      * Creates and opens a new webview panel.
      *
      * @param title Title of webview
@@ -67,6 +61,14 @@ export abstract class BaseWebview {
             localResourceRoots: [vscode.Uri.file(path.join(ExtVars.context.extensionPath, 'dist'))],
         });
 
+        // Listen for messages from webview
+        this.webviewPanel.webview.onDidReceiveMessage((message) => this.onDidReceiveMessage(message));
+
+        this.webviewPanel.onDidDispose(() => {
+            this.webviewPanel = undefined;
+            this.onDidDispose?.();
+        });
+
         this.webviewPanel.webview.html = this.getHtml();
 
         // Pass the vscode-resource URI of the 'fonts' directory
@@ -75,15 +77,8 @@ export abstract class BaseWebview {
         this.postMessage(WebviewCommand.FontUri, fontPathWebviewUri);
 
         // Send data to webview
-        this.sendData(data);
-
-        // Listen for messages from webview
-        this.webviewPanel.webview.onDidReceiveMessage((message) => this.onDidReceiveMessage(message));
-
-        this.webviewPanel.onDidDispose(() => {
-            this.webviewPanel = undefined;
-            this.onDidDispose?.();
-        });
+        this.initView();
+        this.initData(data);
     }
 
     /**
@@ -106,7 +101,7 @@ export abstract class BaseWebview {
      * A content security policy is used along with a nonce to restrict the content that can be loaded.
      */
     private getHtml(): string {
-        if (!this.webviewPanel) {
+        if (this.webviewPanel === undefined) {
             throw new Error(ErrorWebviewUninit);
         }
 
@@ -135,5 +130,19 @@ export abstract class BaseWebview {
      */
     private generateNonce(): string {
         return crypto.randomBytes(16).toString('hex');
+    }
+
+    public setTitle(title: string): void {
+        if (this.webviewPanel !== undefined) {
+            this.webviewPanel!.title = title;
+            this.postMessage(WebviewCommand.Title, title);
+        }
+    }
+
+    /**
+     * Disposes the webview.
+     */
+     public dispose(): void {
+        this.webviewPanel?.dispose();
     }
 }

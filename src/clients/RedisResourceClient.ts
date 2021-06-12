@@ -107,15 +107,15 @@ export class RedisResourceClient {
      * @param redisResource RedisResource
      */
     private async parseRedisResource(redisResource: RedisResource): Promise<ParsedRedisResource> {
-        if (!redisResource.id) {
+        if (redisResource.id === undefined) {
             throw new Error(Strings.ErrorMissingResourceId);
         }
 
-        if (!redisResource.hostName) {
+        if (redisResource.hostName === undefined) {
             throw new Error(Strings.ErrorMissingHostName);
         }
 
-        if (!redisResource.name) {
+        if (redisResource.name === undefined) {
             throw new Error(Strings.ErrorMissingName);
         }
 
@@ -123,7 +123,7 @@ export class RedisResourceClient {
          * Check if enableNonSslPort is undefined because boolean 'false' is falsy.
          * For port numbers, it's okay to throw the error if they are 0 or undefined.
          */
-        if (typeof redisResource.enableNonSslPort === 'undefined' || !redisResource.port || !redisResource.sslPort) {
+        if (redisResource.enableNonSslPort === undefined || redisResource.port === undefined || redisResource.sslPort === undefined) {
             throw new Error(Strings.ErrorMissingPortInfo);
         }
 

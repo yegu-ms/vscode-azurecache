@@ -53,7 +53,7 @@ export class RedisListItem extends KeyCollectionItem {
     /**
      * Loads additional list elements as children by keeping track of the list length and number of elements loaded so far.
      */
-    public async loadNextChildren(clearCache: boolean): Promise<CollectionElement[]> {
+    public async loadMoreKeys(clearCache: boolean): Promise<CollectionElement[]> {
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
 
         if (clearCache) {
@@ -80,7 +80,7 @@ export class RedisListItem extends KeyCollectionItem {
         return collectionElements;
     }
 
-    public hasNextChildren(): boolean {
+    public hasMoreKeys(): boolean {
         return this.elementsShown !== this.size;
     }
 }
