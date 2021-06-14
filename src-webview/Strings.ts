@@ -32,6 +32,7 @@ export const StrContents = "Contents of '$$$'";
 export const StrLoadMore = 'Load more...';
 export const StrLoading = 'Loading...';
 export const StrText = 'Text';
+export const StrBinary = 'Binary';
 export const StrJson = 'JSON';
 
 export const StrHashFieldFilter = 'Hash field filter';

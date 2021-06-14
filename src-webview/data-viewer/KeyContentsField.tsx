@@ -2,27 +2,24 @@
 // Licensed under the MIT License.
 
 import * as React from 'react';
-import { Pivot, PivotItem, TextField, getTheme, ITheme, List, mergeStyleSets } from '@fluentui/react';
-import { StrText, StrJson } from '../Strings';
+import { Pivot, PivotItem } from '@fluentui/react';
+import { stringToBinary } from '../../src/utils/StringUtils';
+import { StrText, StrBinary, StrJson } from '../Strings';
 import './KeyContentsField.css';
 import '../styles.css';
-
-const theme: ITheme = getTheme();
-const { fonts } = theme;
 
 interface Props {
     value?: string;
 }
 
 export function KeyContentsField(props: Props): React.ReactElement {
-    let json = {
-        a: 1,
-        b: 'xyz',
-    };
+    let json = {};
     try {
-        json = JSON.parse(props.value!);
+        if (props.value !== undefined) {
+            json = JSON.parse(props.value);
+        }
         // eslint-disable-next-line no-empty
-    } catch {}
+    } catch (e) {}
 
     return (
         <div className="content-container">
@@ -30,6 +27,11 @@ export function KeyContentsField(props: Props): React.ReactElement {
                 <PivotItem className="content-tab-link" headerText={StrText}>
                     <div className="content-field">
                         <pre>{props.value}</pre>
+                    </div>
+                </PivotItem>
+                <PivotItem className="content-tab-link" headerText={StrBinary}>
+                    <div className="content-field">
+                        <pre>{stringToBinary(props.value)}</pre>
                     </div>
                 </PivotItem>
                 {json && Object.keys(json).length !== 0 && (

@@ -7,7 +7,6 @@ import { CollectionWebview } from '../webview/CollectionWebview';
 import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
 import { AzureCacheItem } from './azure/AzureCacheItem';
 import { AzureCacheClusterItem } from './azure/AzureCacheClusterItem';
-import { RedisClient } from '../clients/RedisClient';
 
 /**
  * Base class for tree items that represent a collection-type key, like lists, sets, and hashes.

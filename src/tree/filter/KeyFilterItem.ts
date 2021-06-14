@@ -8,6 +8,7 @@ import { KeyCollectionItem } from '../KeyCollectionItem';
 import { CollectionElement, CollectionElementValue } from '../../../src-shared/CollectionElement';
 import { CollectionWebview } from '../../webview/CollectionWebview';
 import { RedisClient } from '../../clients/RedisClient';
+import { KeyType } from '../../KeyType';
 import { StrAllKeys, StrKeyFilter } from '../../Strings';
 
 /**
@@ -109,30 +110,17 @@ export class KeyFilterItem extends KeyCollectionItem {
         }
 
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
+        const dbOrNodeId = !this.parent.isClustered
+            ? this.dbs[this.currentSelection]
+            : this.nodes[this.currentSelection].id;
 
         // Sometimes SCAN returns no results, so continue SCANNING until we receive results or we reach the end
         let curCursor = this.scanCursor;
         let scannedKeys: string[] = [];
 
-        if (!this.parent.isClustered) {
-            do {
-                [curCursor, scannedKeys] = await client.scan(
-                    curCursor,
-                    'MATCH',
-                    this.filter,
-                    this.dbs[this.currentSelection]
-                );
-            } while (curCursor !== '0' && scannedKeys.length === 0);
-        } else {
-            do {
-                [curCursor, scannedKeys] = await client.clusterScan(
-                    this.nodes[this.currentSelection].id,
-                    curCursor,
-                    'MATCH',
-                    this.filter
-                );
-            } while (curCursor !== '0' && scannedKeys.length === 0);
-        }
+        do {
+            [curCursor, scannedKeys] = await client.scan(curCursor, 'MATCH', this.filter, dbOrNodeId);
+        } while (curCursor !== '0' && scannedKeys.length === 0);
 
         if (curCursor === '0') {
             this.currentSelection += 1;
@@ -149,7 +137,7 @@ export class KeyFilterItem extends KeyCollectionItem {
                         key,
                         type,
                         value: [],
-                        cursor: type === 'set' || type === 'hash' ? '0' : undefined,
+                        cursor: type === KeyType.Set || type === KeyType.Hash ? '0' : undefined,
                         hasMore: false,
                     } as CollectionElement);
                 } else {
@@ -182,10 +170,10 @@ export class KeyFilterItem extends KeyCollectionItem {
             ? this.dbs[this.currentSelection]
             : this.nodes[this.currentSelection].id;
 
-        if (element.type === 'string') {
+        if (element.type === KeyType.String) {
             const value = (await client.get(element.key, dbOrNodeId)) || '';
             element.value = [{ key: element.key, value }];
-        } else if (element.type === 'list') {
+        } else if (element.type === KeyType.List) {
             if (element.size === undefined || element.cursor === undefined) {
                 element.size = await client.llen(element.key, dbOrNodeId);
                 element.cursor = '0';
@@ -207,7 +195,7 @@ export class KeyFilterItem extends KeyCollectionItem {
                     } as CollectionElementValue);
                 });
             }
-        } else if (element.type === 'set' && element.cursor !== undefined) {
+        } else if (element.type === KeyType.Set && element.cursor !== undefined) {
             let curCursor = element.cursor;
             const values: string[] = [];
 
@@ -226,7 +214,7 @@ export class KeyFilterItem extends KeyCollectionItem {
                     value,
                 } as CollectionElementValue);
             });
-        } else if (element.type === 'zset') {
+        } else if (element.type === KeyType.SortedSet) {
             if (element.size === undefined || element.cursor === undefined) {
                 element.size = await client.zcard(element.key, dbOrNodeId);
                 element.cursor = '0';
@@ -259,7 +247,7 @@ export class KeyFilterItem extends KeyCollectionItem {
 
                 element.value = element.value.sort((a, b) => ((a.id || '') > (b.id || '') ? 1 : -1));
             }
-        } else if (element.type === 'hash' && element.cursor !== undefined) {
+        } else if (element.type === KeyType.Hash && element.cursor !== undefined) {
             let curCursor = element.cursor;
             const values: string[] = [];
 

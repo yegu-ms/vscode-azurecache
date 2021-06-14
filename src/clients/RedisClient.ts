@@ -326,18 +326,9 @@ export class RedisClient {
         cursor: number | string,
         matchOption: 'match' | 'MATCH',
         pattern: string,
-        db?: number
+        dbOrNodeId?: number | string
     ): Promise<[string, string[]]> {
-        return this.exec((await this.getClient(db)).scan(cursor, matchOption, pattern));
-    }
-
-    public async clusterScan(
-        clusterNodeId: string,
-        cursor: number | string,
-        matchOption: 'match' | 'MATCH',
-        pattern: string
-    ): Promise<[string, string[]]> {
-        return this.exec((await this.getClient(clusterNodeId)).scan(cursor, matchOption, pattern));
+        return this.exec((await this.getClient(dbOrNodeId)).scan(cursor, matchOption, pattern));
     }
 
     public async get(key: string, dbOrNodeId?: number | string): Promise<string | null> {

@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { ExtVars } from '../ExtensionVariables';
 import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
 import { ErrorInvalidUri } from '../Strings';
-import { SupportedKeyType } from '../SupportedKeyType';
+import { KeyType } from '../KeyType';
 
 /**
  * Represents the data included in a show-key request.
@@ -23,7 +23,7 @@ interface ShowKeyPayload {
     /**
      * The type of the key
      */
-    type: SupportedKeyType;
+    type: KeyType;
     /**
      * The Redis key
      */
@@ -51,7 +51,7 @@ interface ShowKeyPayload {
 export function createKeyContentUri(
     parsedRedisResource: ParsedRedisResource,
     db: number | undefined,
-    type: SupportedKeyType,
+    type: KeyType,
     key: string,
     subkey?: string,
     displayedSubkey?: string
