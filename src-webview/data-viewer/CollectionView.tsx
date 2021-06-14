@@ -21,52 +21,18 @@ import {
     IconButton,
     IButtonStyles,
     IIconProps,
-    getTheme,
-    ITheme,
-    mergeStyleSets,
     IObjectWithKey,
-    FontWeights,
 } from '@fluentui/react';
 import { CollectionWebviewData } from '../../src-shared/CollectionWebviewData';
 import { WebviewCommand } from '../../src-shared/WebviewCommand';
 import { WebviewMessage } from '../../src-shared/WebviewMessage';
-import { StrTotal, StrContents, StrLoadMore, StrLoadingKeys } from '../Strings';
-import { SelectableCollectionElement } from './SelectableCollectionElement';
-import { CollectionElementValue } from '../../src-shared/CollectionElement';
+import { StrTotal, StrContents, StrLoadMore, StrLoading } from '../Strings';
+import { CollectionViewItem, CollectionViewItemValue } from './CollectionViewItem';
+import { CollectionElement } from '../../src-shared/CollectionElement';
 import { CollectionType } from './CollectionType';
 import { KeyContentsField } from './KeyContentsField';
 import './CollectionView.css';
-
-const theme: ITheme = getTheme();
-
-const modalStyles = mergeStyleSets({
-    container: {
-        color: 'var(--vscode-peekViewTitleLabel-foreground)',
-        backgroundColor: 'var(--vscode-peekViewTitle-background)',
-        border: '2px',
-        borderColor: 'var(--vscode-peekView-border)',
-        width: '80%',
-        display: 'flex',
-        flexFlow: 'column nowrap',
-        alignItems: 'stretch',
-    },
-    header: [
-        theme.fonts.large,
-        {
-            flex: '1 1 auto',
-            borderTop: '3px solid var(--vscode-activitybar-activeBorder)',
-            display: 'flex',
-            alignItems: 'center',
-            fontWeight: FontWeights.semibold,
-            padding: '12px 12px 14px 12px',
-        },
-    ],
-    body: {
-        flex: '4 4 auto',
-        padding: '0 12px 6px 12px',
-        overflowY: 'hidden',
-    },
-});
+import '../styles.css';
 
 const iconButtonStyles: Partial<IButtonStyles> = {
     root: {
@@ -81,21 +47,21 @@ const iconButtonStyles: Partial<IButtonStyles> = {
 };
 
 const cancelIcon: IIconProps = {
-    iconName: 'Cancel',
+    iconName: 'ChevronDownMed',
     styles: { root: { color: 'var(--vscode-peekViewTitleLabel-foreground)' } },
 };
 
 const columns: IColumn[] = [
     {
-        key: 'id',
-        name: 'Id',
-        fieldName: 'id',
+        key: 'value1',
+        name: 'Value 1',
+        fieldName: 'value1',
         minWidth: 0,
     },
     {
-        key: 'value',
-        name: 'Value',
-        fieldName: 'value',
+        key: 'value2',
+        name: 'Value 2',
+        fieldName: 'value2',
         minWidth: 300,
     },
 ];
@@ -104,9 +70,9 @@ interface State {
     title: string;
     type?: CollectionType;
     key?: string;
-    data: SelectableCollectionElement[];
-    groups: IGroup[];
-    items: CollectionElementValue[];
+    viewItems: CollectionViewItem[];
+    viewItemGroups: IGroup[];
+    viewItemValues: CollectionViewItemValue[];
     size: number;
     hasMore: boolean;
     currentKey: string;
@@ -116,14 +82,16 @@ interface State {
 }
 
 export class CollectionView extends React.Component<{}, State> {
+    selection = new Selection();
+
     constructor(props: {}) {
         super(props);
         this.state = {
             title: '',
-            data: [],
+            viewItems: [],
             size: 0,
-            groups: [],
-            items: [],
+            viewItemGroups: [],
+            viewItemValues: [],
             hasMore: false,
             currentKey: '',
             currentValue: '',
@@ -139,231 +107,237 @@ export class CollectionView extends React.Component<{}, State> {
             if (message.command === WebviewCommand.Title) {
                 const title = message.value as CollectionType;
                 this.setState({ title });
-            } else if (message.command === WebviewCommand.Loading) {
-                const status = message.value as boolean;
-                this.setState({ isLoading: status });
             } else if (message.command === WebviewCommand.CollectionSize) {
                 const size = message.value as number;
                 this.setState({ size });
             } else if (message.command === WebviewCommand.CollectionData) {
                 const { data, hasMore, clearCache } = message.value as CollectionWebviewData;
-                const selectableData = data.map(
-                    (element) =>
-                        ({
-                            element,
-                            selected: false,
-                            loading: false,
-                        } as SelectableCollectionElement)
-                );
+                const { viewItemValues } = this.state;
 
-                const groups: IGroup[] = [];
-                const items: CollectionElementValue[] = [];
-                let startIndex = 0;
-                selectableData.forEach((dataItem) => {
-                    const count = dataItem.element.value !== undefined ? dataItem.element.value.length : 0;
-                    groups.push({
-                        key: dataItem.element.key,
-                        name: dataItem.element.key + (dataItem.element.type ? ` (${dataItem.element.type})` : ''),
-                        count,
+                const newViewItems = data.map((element) => ({
+                    element,
+                    selected: false,
+                    loading: false,
+                }));
+
+                const newViewItemGroups: IGroup[] = [];
+                const newViewItemValues: CollectionViewItemValue[] = [];
+                let startIndex = clearCache ? 0 : viewItemValues.length;
+                newViewItems.forEach((item) => {
+                    const count = item.element.value !== undefined ? item.element.value.length : 0;
+                    const extra = item.element.hasMore ? 1 : 0;
+                    newViewItemGroups.push({
+                        key: item.element.key,
+                        name: item.element.key + (item.element.type ? ` (${item.element.type})` : ''),
+                        count: count + extra,
                         startIndex,
                         isCollapsed: true,
                     });
+
                     if (count > 0) {
-                        dataItem.element.value?.map((value) => items.push(value));
+                        item.element.value?.map((value) =>
+                            newViewItemValues.push({
+                                key: value.key,
+                                value1: value.id !== undefined ? value.id : value.value,
+                                value2: value.id !== undefined ? value.value : undefined,
+                                loadAction: false,
+                            })
+                        );
                     }
-                    startIndex += count;
+
+                    if (extra > 0) {
+                        newViewItemValues.push({
+                            key: item.element.key,
+                            value1: StrLoadMore,
+                            loadAction: true,
+                        });
+                    }
+                    startIndex += count + extra;
                 });
 
                 this.setState((prevState) => ({
-                    // Clear previous data if clearCache is true
-                    data: clearCache ? selectableData : [...prevState.data, ...selectableData],
-                    groups,
-                    items,
+                    // Clear previous viewItems if clearCache is true
+                    viewItems: clearCache ? newViewItems : [...prevState.viewItems, ...newViewItems],
+                    viewItemGroups: clearCache
+                        ? newViewItemGroups
+                        : [...prevState.viewItemGroups, ...newViewItemGroups],
+                    viewItemValues: clearCache
+                        ? newViewItemValues
+                        : [...prevState.viewItemValues, ...newViewItemValues],
                     hasMore,
                     isLoading: false,
                 }));
-            } else if (message.command === WebviewCommand.KeyName) {
-                const key = message.value as string;
-                this.setState({ key });
+            } else if (message.command === WebviewCommand.CollectionElementData) {
+                const data = message.value as CollectionElement;
+                const { viewItems, viewItemGroups, viewItemValues } = this.state;
+                const index = viewItems.findIndex((el) => el.element.key === data.key);
+                if (index >= 0) {
+                    viewItems[index] = { ...viewItems[index], element: data };
+
+                    const newViewItemGroups: IGroup[] = [];
+                    const newViewItemValues: CollectionViewItemValue[] = [];
+                    let startIndex = 0;
+                    for (let i = 0; i < index; i++) {
+                        newViewItemGroups.push(viewItemGroups[i]);
+
+                        for (let j = startIndex; j < startIndex + viewItemGroups[i].count; j++) {
+                            newViewItemValues.push(viewItemValues[j]);
+                        }
+
+                        startIndex += viewItemGroups[i].count;
+                    }
+
+                    const count = data.value !== undefined ? data.value.length : 0;
+                    const extra = data.hasMore ? 1 : 0;
+                    const offset = count + extra - viewItemGroups[index].count;
+                    newViewItemGroups.push({
+                        ...viewItemGroups[index],
+                        count: count + extra,
+                    });
+
+                    if (count > 0) {
+                        data.value?.map((value) =>
+                            newViewItemValues.push({
+                                key: value.key,
+                                value1: value.id !== undefined ? value.id : value.value,
+                                value2: value.id !== undefined ? value.value : undefined,
+                                loadAction: false,
+                            })
+                        );
+                    }
+
+                    if (extra > 0) {
+                        newViewItemValues.push({
+                            key: data.key,
+                            value1: StrLoadMore,
+                            loadAction: true,
+                        });
+                    }
+
+                    startIndex += viewItemGroups[index].count;
+
+                    for (let i = index + 1; i < viewItems.length; i++) {
+                        newViewItemGroups.push({
+                            ...viewItemGroups[i],
+                            startIndex: viewItemGroups[i].startIndex + offset,
+                        });
+
+                        for (let j = startIndex; j < startIndex + viewItemGroups[i].count; j++) {
+                            newViewItemValues.push(viewItemValues[j]);
+                        }
+
+                        startIndex += viewItemGroups[i].count;
+                    }
+
+                    this.setState({ viewItems, viewItemGroups: newViewItemGroups, viewItemValues: newViewItemValues });
+                }
+            } else if (message.command === WebviewCommand.Loading) {
+                const status = message.value as boolean;
+                this.setState({ isLoading: status });
             }
         });
     }
 
-    /*
-    onRenderCell = (item: SelectableCollectionElement | undefined, index: number | undefined): JSX.Element | null => {
-        if (!item || typeof index === 'undefined') {
+    onRenderHeader = (
+        headerProps?: IGroupDividerProps,
+        defaultRender?: IRenderFunction<IGroupHeaderProps>
+    ): JSX.Element | null => {
+        if (defaultRender === undefined) {
             return null;
         }
 
-        const itemCellClass = classNames.itemCell + (item.selected ? ' ' + classNames.itemSelected : '');
-        const itemIndexClass = classNames.itemIndex + (item.selected ? ' ' + classNames.itemIndexSelected : '');
-        const onClick = (): void => this.props.onItemClick?.(item, index);
+        // Make entire header togglable
+        const onToggleSelectGroup = (): void => {
+            if (headerProps?.onToggleCollapse && headerProps?.group) {
+                headerProps.onToggleCollapse(headerProps.group);
+            }
+        };
 
-        let header = null;
-
-        if (this.props?.type === 'zset' || this.props?.type === 'hash') {
-            header = (
-                <div>
-                    <div className={itemIndexClass}>{item.id}</div>
-                </div>
-            );
-        } else if (this.props?.type === 'set' || this.props?.type === 'list') {
-            header = <div className={itemIndexClass}>{index}</div>;
-        }
+        // Hide header count
+        const headerCountStyle: IStyle = { display: 'none' };
 
         return (
-            <div className={itemCellClass} data-is-focusable={true} data-is-scrollable={true} onClick={onClick}>
-                <div className={classNames.itemContent}>
-                    {header}
-                    <div className={classNames.itemName}>{item.value}</div>
-                </div>
-            </div>
+            <span>
+                {defaultRender({
+                    ...headerProps,
+                    styles: { headerCount: headerCountStyle },
+                    onToggleSelectGroup: onToggleSelectGroup,
+                })}
+            </span>
         );
     };
-    */
 
-    handleListScroll = (event: React.UIEvent<HTMLDivElement>): void => {
-        const { isLoading } = this.state;
-        const target = event.target as HTMLDivElement;
+    onRenderCell = (nestingDepth?: number, item?: CollectionViewItemValue, index?: number): JSX.Element => (
+        <DetailsRow
+            columns={columns}
+            groupNestingDepth={nestingDepth}
+            item={item}
+            itemIndex={index !== undefined ? index : 0}
+            selection={this.selection}
+            selectionMode={SelectionMode.none}
+            compact={true}
+        />
+    );
 
-        if (!isLoading && target.scrollHeight - target.scrollTop - target.clientHeight < 1) {
-            this.loadMore();
-        }
-    };
-
-    /**
-     * Handles selection when collection item is clicked.
-     * @param element The element that was clicked
-     * @param index The index in the collection
-     */
-    onItemClick = (element: SelectableCollectionElement, index: number): void => {
-        // Need to update entire data because FluentUI's Basic List only re-renders based on changes in underlying 'data'
-        const newData = this.state.data.map((val, idx) => {
-            // De-select previously selected item
-            if (val.selected) {
-                val.selected = false;
-                return val;
-            }
-            // Select new item (if the clicked item was already selected, then it would have been de-selected above)
-            if (index === idx) {
-                val.selected = true;
-                return val;
-            }
-            // Otherwise return same item
-            return val;
-        });
-
-        this.setState({
-            currentValue: element.selected ? element.element.key : undefined,
-            data: newData,
-        });
-    };
-
-    /**
-     * Tells extension to send over more data.
-     */
-    loadMore = (): void => {
-        this.setState({
-            isLoading: true,
-        });
-        vscode.postMessage({
-            command: WebviewCommand.LoadMore,
-        });
-    };
-
-    /**
-     * Handles filter textfield changes.
-     * This is called from HashFilterField with a debounce so it is not triggered after every keystroke.
-     *
-     * @param event The event
-     * @param newValue The new filter value
-     */
-    onFilterChanged = (
-        event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>,
-        newValue?: string | undefined
-    ): void => {
-        if (this.state.type !== 'hash') {
+    onItemInvoked = (obj?: IObjectWithKey, itemIndex?: number, _event?: Event): void => {
+        if (obj === undefined) {
             return;
         }
 
-        this.setState({
-            isLoading: true,
-        });
-
-        // Treat empty string as 'match all'
-        if (newValue === undefined) {
-            newValue = '*';
+        const { viewItems } = this.state;
+        const item = obj! as CollectionViewItemValue;
+        if (!item.loadAction) {
+            this.setState({
+                currentKey: item.value2 === undefined ? item.key : `${item.key} (${item.value1})`,
+                currentValue: item.value2 === undefined ? item.value1 : item.value2,
+                isModalOpen: true,
+            });
+        } else {
+            const index = viewItems.findIndex((el) => el.element.key === item.key);
+            if (index >= 0 && itemIndex !== undefined) {
+                const { viewItemValues } = this.state;
+                viewItemValues[itemIndex] = {
+                    ...viewItemValues[itemIndex],
+                    value1: StrLoading,
+                };
+                this.setState({ viewItemValues });
+                vscode.postMessage({
+                    command: WebviewCommand.LoadKeyValue,
+                    value: viewItems[index].element,
+                });
+            }
         }
+    };
+
+    /**
+     * Tells extension to send over more viewItems.
+     */
+    loadKeys = (): void => {
+        this.setState({ isLoading: true });
         vscode.postMessage({
-            command: WebviewCommand.FilterChange,
-            value: newValue,
+            command: WebviewCommand.LoadKeys,
         });
     };
 
+    hideModal = (): void => {
+        this.setState({ isModalOpen: false });
+    };
+
     render(): JSX.Element | null {
-        const { groups, items, hasMore, isLoading, title, size, isModalOpen, currentKey, currentValue } = this.state;
+        const {
+            viewItemGroups,
+            viewItemValues,
+            hasMore,
+            isLoading,
+            title,
+            size,
+            isModalOpen,
+            currentKey,
+            currentValue,
+        } = this.state;
         const total = StrTotal.replace('$$$', String(size));
 
-        const onRenderHeader = (
-            headerProps?: IGroupDividerProps,
-            defaultRender?: IRenderFunction<IGroupHeaderProps>
-        ): JSX.Element | null => {
-            if (defaultRender === undefined) {
-                return null;
-            }
-
-            // Make entire header togglable
-            const onToggleSelectGroup = (): void => {
-                if (headerProps?.onToggleCollapse && headerProps?.group) {
-                    headerProps.onToggleCollapse(headerProps.group);
-                }
-            };
-
-            // Hide header count
-            const headerCountStyle: IStyle = { display: 'none' };
-
-            return (
-                <span>
-                    {defaultRender({
-                        ...headerProps,
-                        styles: { headerCount: headerCountStyle },
-                        onToggleSelectGroup: onToggleSelectGroup,
-                    })}
-                </span>
-            );
-        };
-
-        const selection = new Selection();
-        selection.setItems(items);
-
-        const onRenderCell = (nestingDepth?: number, item?: CollectionElementValue, index?: number): JSX.Element => (
-            <DetailsRow
-                columns={columns}
-                groupNestingDepth={nestingDepth}
-                item={item}
-                itemIndex={index !== undefined ? index : 0}
-                selection={selection}
-                selectionMode={SelectionMode.none}
-                compact={true}
-            />
-        );
-
-        const onItemInvoked = (obj?: IObjectWithKey, _index?: number, _event?: Event): void => {
-            if (obj === undefined) {
-                return;
-            }
-
-            const item = obj! as CollectionElementValue;
-            this.setState({
-                currentKey: item.key,
-                currentValue: item.value!,
-                isModalOpen: true,
-            });
-        };
-
-        const hideModal = (): void => {
-            this.setState({ isModalOpen: false });
-        };
+        this.selection.setItems(viewItemValues);
 
         return (
             <div className="dataviewer-container">
@@ -372,38 +346,36 @@ export class CollectionView extends React.Component<{}, State> {
                 </h2>
 
                 <div className="list-container">
-                    <div className="list-view" onScroll={this.handleListScroll}>
+                    <div className="list-view">
                         <SelectionZone
-                            selection={selection}
+                            selection={this.selection}
                             selectionMode={SelectionMode.none}
-                            onItemInvoked={onItemInvoked}
+                            onItemInvoked={this.onItemInvoked}
                         >
                             <GroupedList
-                                groups={groups}
-                                groupProps={{ onRenderHeader }}
-                                items={items}
-                                onRenderCell={onRenderCell}
-                                selection={selection}
+                                groups={viewItemGroups}
+                                groupProps={{ onRenderHeader: this.onRenderHeader }}
+                                items={viewItemValues}
+                                onRenderCell={this.onRenderCell}
+                                selection={this.selection}
                                 selectionMode={SelectionMode.none}
                                 compact={true}
                             />
                         </SelectionZone>
                     </div>
-                    {!isLoading && hasMore && (
-                        <ActionButton text={StrLoadMore} onClick={this.loadMore} disabled={!hasMore} />
-                    )}
-                    {isLoading && <Label>{StrLoadingKeys}</Label>}
+                    {!isLoading && hasMore && <ActionButton text={StrLoadMore} onClick={this.loadKeys} />}
+                    {isLoading && <Label>{StrLoading}</Label>}
                     <Modal
-                        containerClassName={modalStyles.container}
+                        containerClassName="content-modal-container"
                         isOpen={isModalOpen}
-                        onDismiss={hideModal}
+                        onDismiss={this.hideModal}
                         isBlocking={false}
                     >
-                        <div className={modalStyles.header}>
+                        <div className="content-modal-header">
                             <span>{StrContents.replace('$$$', currentKey)}</span>
-                            <IconButton styles={iconButtonStyles} iconProps={cancelIcon} onClick={hideModal} />
+                            <IconButton styles={iconButtonStyles} iconProps={cancelIcon} onClick={this.hideModal} />
                         </div>
-                        <div className={modalStyles.body}>
+                        <div className="content-modal-body">
                             <KeyContentsField value={currentValue} />
                         </div>
                     </Modal>

@@ -5,6 +5,6 @@
  * Common interface for parsed Redis server info as key-value pairs.
  */
 export interface KeyValue {
-	key: string;
-	value: string;
+    key: string;
+    value: string;
 }

@@ -125,7 +125,7 @@ export class AzureCacheClusterItem extends AzureParentTreeItem implements DataFi
     }
 
     public getSelectedDataFilters(): FilterableItem[] {
-        return this.dbs.filter(item => item.selected);
+        return this.dbs.filter((el) => el.selected);
     }
 
     public addKeyFilter(filterExpr: string): number {

@@ -24,28 +24,26 @@
     margin-top: 10px;
 }
 
-.ms-GroupedList {
-    color: var(--vscode-editor-foreground);
-    background-color: var(--vscode-editor-background);
-}
-
-.ms-DetailsRow {
-    color: var(--vscode-editor-foreground);
-    background-color: var(--vscode-editor-background);
-    font-size: small;
-    box-sizing: border-box;
+.content-modal-container {
+    color: var(--vscode-peekViewTitleLabel-foreground);
+    background-color: var(--vscode-peekViewTitle-background);
+    width: 80%;
     display: flex;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
+    flex-flow: column nowrap;
+    align-items: stretch;
 }
 
-.ms-DetailsRow:hover {
-    color: var(--vscode-editor-foreground);
-    background-color: var(--vscode-list-hoverBackground);
+.content-modal-header {
+    font-size: large;
+    font-weight: bolder;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    padding: 12px 12px 14px;
 }
 
-.ms-Button-flexContainer {
-    height: inherit;
+.content-modal-body {
+    flex: 4 4 auto;
+    padding: 0 12px 6px;
+    overflow-y: hidden;
 }

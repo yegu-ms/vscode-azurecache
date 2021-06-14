@@ -17,9 +17,9 @@ export function initializeIcons(baseUrl = '.', options?: IIconOptions): void {
             src: `url('${baseUrl}/fabric-icons.woff') format('woff')`,
         },
         icons: {
-            Cancel: '\uE711',
             ChevronDownMed: '\uE972',
             ChevronRightMed: '\uE974',
+            ChromeClose: '\uE8BB',
             Copy: '\uE8C8',
             Tag: '\uE8EC',
         },

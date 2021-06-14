@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 export interface SelectableItem {
-    id: number;
+    id: string;
     label?: string;
     selected: boolean;
 }

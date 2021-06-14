@@ -7,16 +7,16 @@
     "hashFontFileName": false,
     "glyphs": [
         {
-            "name": "Cancel",
-            "unicode": "E711"
-        },
-        {
             "name": "ChevronDownMed",
             "unicode": "E972"
         },
         {
             "name": "ChevronRightMed",
             "unicode": "E974"
+        },
+        {
+            "name": "ChromeClose",
+            "unicode": "E8BB"
         },
         {
             "name": "Copy",

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import * as React from 'react';
 import {
     GroupedList,
     Label,
@@ -10,8 +11,8 @@ import {
     IGroupHeaderProps,
     IGroupRenderProps,
 } from '@fluentui/react/lib/';
-import * as React from 'react';
 import { CopyableTextField } from './CopyableTextField';
+import '../styles.css';
 
 interface Props {
     label: string;

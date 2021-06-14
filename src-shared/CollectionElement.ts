@@ -4,12 +4,15 @@
 export interface CollectionElementValue {
     key: string;
     id?: string;
-    value?: string;
+    value: string;
 }
 
 export interface CollectionElement {
     id?: string;
     key: string;
-    type?: string;
-    value?: CollectionElementValue[];
+    type: string;
+    value: CollectionElementValue[];
+    size?: number;
+    cursor?: string;
+    hasMore: boolean;
 }

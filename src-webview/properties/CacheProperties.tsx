@@ -11,7 +11,8 @@ import { WebviewMessage } from '../../src-shared/WebviewMessage';
 import { CollapsibleList } from './CollapsibleList';
 import { CopyableTextField } from './CopyableTextField';
 import * as Strings from '../Strings';
-import './styles.css';
+import './CacheProperties.css';
+import '../styles.css';
 
 interface NamedValue {
     name: string;
@@ -109,35 +110,29 @@ export class CacheProperties extends React.Component<{}, State> {
                         <DetailsList items={redisInfo} columns={columns} selectionMode={SelectionMode.none} />
                     </PivotItem>
                     <PivotItem headerText={Strings.StrSettings}>
-                        <div>
-                            <CopyableTextField
-                                id="hostName"
-                                label={Strings.StrHostname}
-                                value={redisResource.hostName}
-                            />
-                            <CopyableTextField id="nonSslPort" label={Strings.StrNonSslPort} value={nonSslPort} />
-                            <CopyableTextField id="sslPort" label={Strings.StrSslPort} value={redisResource.sslPort} />
-                            <CopyableTextField
-                                id="resourceId"
-                                label={Strings.StrResourceId}
-                                value={redisResource.resourceId}
-                            />
-                            <CopyableTextField
-                                id="primaryAccessKey"
-                                label={Strings.StrPrimaryAccessKey}
-                                value={accessKey}
-                            />
-                            <CopyableTextField
-                                id="primaryConnectionString"
-                                label={Strings.StrPrimaryConnectionStr}
-                                value={connectionString}
-                            />
-                            <CollapsibleList
-                                label={Strings.StrGeoReplication}
-                                groupName={Strings.StrLinkedServers}
-                                values={redisResource.linkedServers}
-                            />
-                        </div>
+                        <CopyableTextField id="hostName" label={Strings.StrHostname} value={redisResource.hostName} />
+                        <CopyableTextField id="nonSslPort" label={Strings.StrNonSslPort} value={nonSslPort} />
+                        <CopyableTextField id="sslPort" label={Strings.StrSslPort} value={redisResource.sslPort} />
+                        <CopyableTextField
+                            id="resourceId"
+                            label={Strings.StrResourceId}
+                            value={redisResource.resourceId}
+                        />
+                        <CopyableTextField
+                            id="primaryAccessKey"
+                            label={Strings.StrPrimaryAccessKey}
+                            value={accessKey}
+                        />
+                        <CopyableTextField
+                            id="primaryConnectionString"
+                            label={Strings.StrPrimaryConnectionStr}
+                            value={connectionString}
+                        />
+                        <CollapsibleList
+                            label={Strings.StrGeoReplication}
+                            groupName={Strings.StrLinkedServers}
+                            values={redisResource.linkedServers}
+                        />
                     </PivotItem>
                 </Pivot>
             </div>

@@ -7,10 +7,6 @@ import { RedisResourceClient } from '../clients/RedisResourceClient';
 import { AzureCacheItem } from '../tree/azure/AzureCacheItem';
 import { AzureSubscriptionTreeItem } from '../tree/azure/AzureSubscriptionTreeItem';
 import { RedisDbFilterItem } from '../tree/filter/RedisDbFilterItem';
-import { RedisHashItem } from '../tree/redis/RedisHashItem';
-import { RedisListItem } from '../tree/redis/RedisListItem';
-import { RedisSetItem } from '../tree/redis/RedisSetItem';
-import { RedisZSetItem } from '../tree/redis/RedisZSetItem';
 import { TestRedisClient } from './clients/TestRedisClient';
 import sinon = require('sinon');
 import assert = require('assert');
@@ -62,10 +58,10 @@ describe('CollectionItems', () => {
 
             // Stub LRANGE calls
             const lrangeStub = sandbox.stub(stubRedisClient, 'lrange');
-            lrangeStub.withArgs('mylist', 0, 9, 0).resolves(Array.from(Array(10).keys()).map((num) => num.toString()));
+            lrangeStub.withArgs('mylist', 0, 9, 0).resolves(Array.from(Array(10).keys()).map((el) => el.toString()));
             lrangeStub
                 .withArgs('mylist', 10, 14, 0)
-                .resolves(Array.from(Array(5).keys()).map((num) => (num + 10).toString()));
+                .resolves(Array.from(Array(5).keys()).map((el) => (el + 10).toString()));
 
             const listItem = new RedisListItem(testDb, 'mylist');
             let childItems = await listItem.loadMoreKeys(true);

@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { IStackTokens, ITooltipHostStyles, Stack, TextField, TooltipDelay, TooltipHost } from '@fluentui/react/lib/';
+import { vscode } from '../vscode';
 import * as React from 'react';
+import { IStackTokens, ITooltipHostStyles, Stack, TextField, TooltipDelay, TooltipHost } from '@fluentui/react/lib/';
 import { WebviewCommand } from '../../src-shared/WebviewCommand';
 import { StrCopied, StrCopyToClipboard } from '../Strings';
-import { vscode } from '../vscode';
 import { CopyButton } from './CopyButton';
+import '../styles.css';
 
 interface State {
     showClicked: boolean;
@@ -16,7 +17,6 @@ interface Props {
     id: string;
     label?: string;
     value?: string | number;
-    type?: string;
 }
 
 const tooltipProps = { gapSpace: 0 };
@@ -31,7 +31,7 @@ export class CopyableTextField extends React.Component<Props, State> {
     };
 
     onClick = (): void => {
-        if (this.props.value !== undefined) {
+        if (this.props.value) {
             vscode.postMessage({
                 command: WebviewCommand.CopyText,
                 value: this.props.value.toString(),
@@ -57,21 +57,7 @@ export class CopyableTextField extends React.Component<Props, State> {
         return (
             <Stack horizontal tokens={stackTokens}>
                 <Stack.Item grow align="end">
-                    {
-                        this.props.type !== 'password' ? (
-                            <TextField
-                                label={this.props.label}
-                                readOnly value={value}
-                            />
-                        ) : (
-                            <TextField
-                                label={this.props.label}
-                                readOnly value={value}
-                                type="password"
-                                canRevealPassword
-                            />
-                        )
-                    }
+                    <TextField label={this.props.label} readOnly value={value} />
                 </Stack.Item>
                 <Stack.Item align="end">
                     <TooltipHost

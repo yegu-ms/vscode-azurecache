@@ -19,6 +19,7 @@ import { StrAllKeys, StrKeyFilter } from '../../Strings';
 export class KeyFilterItem extends KeyCollectionItem {
     private static readonly contextValue = 'keyFilterItem';
     private static readonly commandId = 'azureCache.viewFilteredKeys';
+    private static readonly incrementCount = 1;
 
     protected webview: CollectionWebview;
 
@@ -68,9 +69,12 @@ export class KeyFilterItem extends KeyCollectionItem {
     }
 
     public async refreshDataSet(): Promise<void> {
-        if (!this.parent.parsedRedisResource.cluster) {
-            this.dbs = (this.parent as AzureCacheItem).getSelectedDbs();
+        if (!this.parent.isClustered) {
+            this.dbs = this.parent.getSelectedDbs();
+        } else {
+            this.nodes = this.parent.getSelectedNodes();
         }
+
         this.currentSelection = 0;
         this.scanCursor = '0';
     }
@@ -78,7 +82,14 @@ export class KeyFilterItem extends KeyCollectionItem {
     public async getSize(): Promise<number> {
         if (this.filter === '*') {
             const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
-            const counts: number[] = await Promise.all(this.dbs.map(async (db) => client.dbsize(db)));
+
+            let counts: number[];
+            if (!this.parent.isClustered) {
+                counts = await Promise.all(this.dbs.map(async (db) => client.dbsize(db)));
+            } else {
+                counts = await Promise.all(this.nodes.map(async (node) => client.dbsize(node.id)));
+            }
+
             return counts.length ? counts.reduce((total, current) => total + current) : 0;
         }
 
@@ -92,20 +103,36 @@ export class KeyFilterItem extends KeyCollectionItem {
         if (clearCache) {
             await this.refreshDataSet();
         }
-        
+
         if (!this.hasMoreKeys()) {
             return [];
         }
-        
+
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
 
         // Sometimes SCAN returns no results, so continue SCANNING until we receive results or we reach the end
         let curCursor = this.scanCursor;
         let scannedKeys: string[] = [];
 
-        do {
-            [curCursor, scannedKeys] = await client.scan(curCursor, 'MATCH', this.filter, this.dbs[this.currentSelection]);
-        } while (curCursor !== '0' && scannedKeys.length === 0);
+        if (!this.parent.isClustered) {
+            do {
+                [curCursor, scannedKeys] = await client.scan(
+                    curCursor,
+                    'MATCH',
+                    this.filter,
+                    this.dbs[this.currentSelection]
+                );
+            } while (curCursor !== '0' && scannedKeys.length === 0);
+        } else {
+            do {
+                [curCursor, scannedKeys] = await client.clusterScan(
+                    this.nodes[this.currentSelection].id,
+                    curCursor,
+                    'MATCH',
+                    this.filter
+                );
+            } while (curCursor !== '0' && scannedKeys.length === 0);
+        }
 
         if (curCursor === '0') {
             this.currentSelection += 1;
@@ -114,22 +141,31 @@ export class KeyFilterItem extends KeyCollectionItem {
             this.scanCursor = curCursor;
         }
 
-        const collectionElements = await Promise.all(scannedKeys.map(async (key) => {
-            const type = await this.getKeyType(client, this.dbs[this.currentSelection], key);
-            const value = await this.getKeyValue(client, this.dbs[this.currentSelection], key, type);
-            return {
-                key,
-                type,
-                value
-            } as CollectionElement;
-        }));
+        const collectionElements = await Promise.all(
+            scannedKeys.map(async (key) => {
+                const type = await this.getKeyType(client, key);
+                if (type !== undefined) {
+                    return this.loadValue(client, {
+                        key,
+                        type,
+                        value: [],
+                        cursor: type === 'set' || type === 'hash' ? '0' : undefined,
+                        hasMore: false,
+                    } as CollectionElement);
+                } else {
+                    return { key, type: 'unknown', value: [], hasMore: false } as CollectionElement;
+                }
+            })
+        );
 
-        return collectionElements;
+        return collectionElements.filter((el) => el.type !== 'unknown');
     }
 
     public hasMoreKeys(): boolean {
-        if ((!this.parsedRedisResource.cluster && this.currentSelection >= this.dbs.length) ||
-            (this.parsedRedisResource.cluster && this.currentSelection >= this.nodes.length)) {
+        if (
+            (!this.parent.isClustered && this.currentSelection >= this.dbs.length) ||
+            (this.parent.isClustered && this.currentSelection >= this.nodes.length)
+        ) {
             return false;
         }
 
@@ -138,34 +174,130 @@ export class KeyFilterItem extends KeyCollectionItem {
 
     public async loadKeyValue(element: CollectionElement): Promise<CollectionElement> {
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
-
-        let type = element.type;
-        if (type === undefined) {
-            type = await this.getKeyType(client, this.dbs[this.currentSelection], element.key);
-        }
-
-        const value = await this.getKeyValue(client, this.dbs[this.currentSelection], element.key, type);
-
-        return {
-            ...element,
-            type,
-            value
-        } as CollectionElement;
+        return this.loadValue(client, element);
     }
 
-    private async getKeyType(client: RedisClient, db: number, key: string): Promise<string> {
-        return client.type(key, db);
-    }
+    private async loadValue(client: RedisClient, element: CollectionElement): Promise<CollectionElement> {
+        const dbOrNodeId = !this.parent.isClustered
+            ? this.dbs[this.currentSelection]
+            : this.nodes[this.currentSelection].id;
 
-    private async getKeyValue(client: RedisClient, db: number, key: string, type: string): Promise<CollectionElementValue[]> {
-        const values: CollectionElementValue[] = [];
-        if (type === 'string') {
-            const value = await client.get(key, db);
-            values.push({ key, value } as CollectionElementValue); 
+        if (element.type === 'string') {
+            const value = (await client.get(element.key, dbOrNodeId)) || '';
+            element.value = [{ key: element.key, value }];
+        } else if (element.type === 'list') {
+            if (element.size === undefined || element.cursor === undefined) {
+                element.size = await client.llen(element.key, dbOrNodeId);
+                element.cursor = '0';
+            }
+
+            let curCursor = Number(element.cursor);
+            if (curCursor < element.size) {
+                const min = curCursor;
+                const max = Math.min(curCursor + KeyFilterItem.incrementCount, element.size) - 1;
+                const values = await client.lrange(element.key, min, max, dbOrNodeId);
+                curCursor += values.length;
+                element.cursor = String(curCursor);
+                element.hasMore = curCursor < element.size;
+
+                values.map((value) => {
+                    element.value.push({
+                        key: element.key,
+                        value,
+                    } as CollectionElementValue);
+                });
+            }
+        } else if (element.type === 'set' && element.cursor !== undefined) {
+            let curCursor = element.cursor;
+            const values: string[] = [];
+
+            do {
+                const result = await client.sscan(element.key, curCursor, 'MATCH', '*', dbOrNodeId);
+                curCursor = result[0];
+                values.push(...result[1]);
+            } while (curCursor !== '0' && values.length < KeyFilterItem.incrementCount);
+
+            element.cursor = curCursor === '0' ? undefined : curCursor;
+            element.hasMore = element.cursor !== undefined;
+
+            values.map((value) => {
+                element.value.push({
+                    key: element.key,
+                    value,
+                } as CollectionElementValue);
+            });
+        } else if (element.type === 'zset') {
+            if (element.size === undefined || element.cursor === undefined) {
+                element.size = await client.zcard(element.key, dbOrNodeId);
+                element.cursor = '0';
+            }
+
+            let curCursor = Number(element.cursor);
+            if (curCursor < element.size) {
+                const min = curCursor;
+                const max = Math.min(curCursor + KeyFilterItem.incrementCount, element.size) - 1;
+                const values = await client.zrange(element.key, min, max, dbOrNodeId);
+                curCursor = max + 1;
+                element.cursor = String(curCursor);
+                element.hasMore = curCursor < element.size;
+
+                let value = '';
+                // zrange returns a single list alternating between the key value and the key score
+                for (let i = 0; i < values.length; i++) {
+                    if (i % 2 === 0) {
+                        // Even indices contain the key value
+                        value = values[i];
+                    } else {
+                        // Odd indices contain the key score, so construct the tree item here as the associated value is saved
+                        element.value.push({
+                            key: element.key,
+                            id: values[i],
+                            value,
+                        });
+                    }
+                }
+
+                element.value = element.value.sort((a, b) => ((a.id || '') > (b.id || '') ? 1 : -1));
+            }
+        } else if (element.type === 'hash' && element.cursor !== undefined) {
+            let curCursor = element.cursor;
+            const values: string[] = [];
+
+            // Keep scanning until a total of at least 10 elements have been returned
+            // TODO: This can be optimized by sending data to webview after each SCAN instead of waiting until all SCANs have completed
+            do {
+                const result = await client.hscan(element.key, curCursor, 'MATCH', '*', dbOrNodeId);
+                curCursor = result[0];
+                values.push(...result[1]);
+                // scannedFields contains field name and value, so divide by 2 to get number of values scanned
+            } while (curCursor !== '0' && values.length / 2 < KeyFilterItem.incrementCount);
+
+            element.cursor = curCursor === '0' ? undefined : curCursor;
+            element.hasMore = element.cursor !== undefined;
+
+            let field = '';
+            // HSCAN returns a single list alternating between the hash field name and the hash field value
+            for (let i = 0; i < values.length; i++) {
+                if (i % 2 === 0) {
+                    // Even indices contain the hash field name
+                    field = values[i];
+                } else {
+                    // Odd indices contain the hash field value
+                    element.value.push({
+                        key: element.key,
+                        id: field,
+                        value: values[i],
+                    });
+                }
+            }
         } else {
-            values.push({ key });
+            element.value = [{ key: element.key, value: '' }];
         }
 
-        return values;
+        return element;
+    }
+
+    private async getKeyType(client: RedisClient, key: string): Promise<string> {
+        return client.type(key, this.dbs[this.currentSelection]);
     }
 }

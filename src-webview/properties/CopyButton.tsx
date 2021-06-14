@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { IconButton, IIconProps } from '@fluentui/react/lib/';
 import * as React from 'react';
+import { IconButton, IIconProps } from '@fluentui/react/lib/';
 import { StrCopy } from '../Strings';
+import '../styles.css';
 
 const copyIcon: IIconProps = { iconName: 'Copy' };
 

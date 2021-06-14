@@ -2,9 +2,13 @@
 // Licensed under the MIT License.
 
 import * as React from 'react';
-import { Pivot, PivotItem, TextField } from '@fluentui/react';
+import { Pivot, PivotItem, TextField, getTheme, ITheme, List, mergeStyleSets } from '@fluentui/react';
 import { StrText, StrJson } from '../Strings';
 import './KeyContentsField.css';
+import '../styles.css';
+
+const theme: ITheme = getTheme();
+const { fonts } = theme;
 
 interface Props {
     value?: string;
@@ -22,13 +26,17 @@ export function KeyContentsField(props: Props): React.ReactElement {
 
     return (
         <div className="content-container">
-            <Pivot>
-                <PivotItem headerText={StrText}>
-                    <TextField readOnly multiline value={props.value} resizable={false} />
+            <Pivot className="content-tabs">
+                <PivotItem className="content-tab-link" headerText={StrText}>
+                    <div className="content-field">
+                        <pre>{props.value}</pre>
+                    </div>
                 </PivotItem>
                 {json && Object.keys(json).length !== 0 && (
-                    <PivotItem headerText={StrJson}>
-                        <TextField readOnly multiline value={JSON.stringify(json, null, 4)} resizable={false} />
+                    <PivotItem className="content-tab-link" headerText={StrJson}>
+                        <div className="content-field">
+                            <pre>{JSON.stringify(json, null, 4)}</pre>
+                        </div>
                     </PivotItem>
                 )}
             </Pivot>

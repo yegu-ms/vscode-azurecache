@@ -123,7 +123,11 @@ export class RedisResourceClient {
          * Check if enableNonSslPort is undefined because boolean 'false' is falsy.
          * For port numbers, it's okay to throw the error if they are 0 or undefined.
          */
-        if (redisResource.enableNonSslPort === undefined || redisResource.port === undefined || redisResource.sslPort === undefined) {
+        if (
+            redisResource.enableNonSslPort === undefined ||
+            redisResource.port === undefined ||
+            redisResource.sslPort === undefined
+        ) {
             throw new Error(Strings.ErrorMissingPortInfo);
         }
 

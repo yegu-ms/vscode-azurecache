@@ -1,0 +1,106 @@
+/* Copyright (c) Microsoft Corporation.
+   Licensed under the MIT License. */
+
+.ms-Button.ms-Button--action {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-Button.ms-Button--action:hover {
+    color: var(--vscode-activityBar-foreground);
+}
+
+.ms-Button-flexContainer {
+    height: inherit;
+}
+
+.ms-DetailsHeader {
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-DetailsHeader-cellTitle {
+    color: var(--vscode-editor-foreground);
+}
+
+.ms-DetailsHeader:hover .ms-DetailsHeader-cellTitle {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-DetailsRow {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+    font-size: medium;
+    box-sizing: border-box;
+    display: flex;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.ms-DetailsRow:hover {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.ms-GroupHeader-title {
+    font-size: medium;
+    cursor: initial;
+}
+
+.ms-GroupHeader:hover {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-breadcrumbPicker-background);
+}
+
+.ms-GroupHeader-expand {
+    color: var(--vscode-editor-foreground);
+}
+
+.ms-GroupHeader-expand:hover {
+    background-color: var(--vscode-breadcrumbPicker-background);
+}
+
+.ms-GroupedList {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-Pivot {
+    margin-bottom: 12px;
+}
+
+.ms-Pivot-link {
+    font-size: medium;
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.ms-Pivot-link:hover {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-Label {
+    color: var(--vscode-editor-foreground);
+}
+
+.ms-TextField-field {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+.ms-TextField-field:disabled {
+    background-color: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.ms-TextField-fieldGroup {
+    border-color: var(--vscode-editor-foreground);
+}
+
+.ms-TextField-fieldGroup:hover {
+    border-color: var(--vscode-button-hoverBackground);
+}

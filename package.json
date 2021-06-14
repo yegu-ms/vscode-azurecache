@@ -95,6 +95,11 @@
                     "group": "inline"
                 },
                 {
+                    "command": "azureCache.selectClusterNodes",
+                    "when": "view == azureCache && viewItem == redisClusterNodeFilter",
+                    "group": "inline"
+                },
+                {
                     "command": "azureCache.setKeyFilter",
                     "when": "view == azureCache && viewItem == keyFilterItem",
                     "group": "inline"
@@ -124,6 +129,10 @@
                     "when": "never"
                 },
                 {
+                    "command": "azureCache.selectClusterNodes",
+                    "when": "never"
+                },
+                {
                     "command": "azureCache.addKeyFilter",
                     "when": "never"
                 },
@@ -132,35 +141,11 @@
                     "when": "never"
                 },
                 {
-                    "command": "azureCache.showStringItem",
-                    "when": "never"
-                },
-                {
-                    "command": "azureCache.showUnsupportedItem",
-                    "when": "never"
-                },
-                {
                     "command": "azureCache.copyConnectionString",
                     "when": "never"
                 },
                 {
                     "command": "azureCache.viewCacheProps",
-                    "when": "never"
-                },
-                {
-                    "command": "azureCache.viewList",
-                    "when": "never"
-                },
-                {
-                    "command": "azureCache.viewHash",
-                    "when": "never"
-                },
-                {
-                    "command": "azureCache.viewSet",
-                    "when": "never"
-                },
-                {
-                    "command": "azureCache.viewZSet",
                     "when": "never"
                 }
             ]
@@ -189,6 +174,12 @@
                 "icon": "$(filter)"
             },
             {
+                "command": "azureCache.selectClusterNodes",
+                "title": "Select Shards...",
+                "category": "Azure Cache",
+                "icon": "$(filter)"
+            },
+            {
                 "command": "azureCache.addKeyFilter",
                 "title": "Add key filter",
                 "category": "Azure Cache",
@@ -201,16 +192,6 @@
                 "icon": "$(edit)"
             },
             {
-                "command": "azureCache.showStringItem",
-                "title": "Show string item",
-                "category": "Azure Cache"
-            },
-            {
-                "command": "azureCache.showUnsupportedItem",
-                "title": "Show unsupported item",
-                "category": "Azure Cache"
-            },
-            {
                 "command": "azureCache.copyConnectionString",
                 "title": "Copy connection string",
                 "category": "Azure Cache"
@@ -218,26 +199,6 @@
             {
                 "command": "azureCache.viewCacheProps",
                 "title": "View cache properties",
-                "category": "Azure Cache"
-            },
-            {
-                "command": "azureCache.viewList",
-                "title": "View list",
-                "category": "Azure Cache"
-            },
-            {
-                "command": "azureCache.viewHash",
-                "title": "View hash",
-                "category": "Azure Cache"
-            },
-            {
-                "command": "azureCache.viewSet",
-                "title": "View set",
-                "category": "Azure Cache"
-            },
-            {
-                "command": "azureCache.viewZSet",
-                "title": "View sorted set",
                 "category": "Azure Cache"
             }
         ]

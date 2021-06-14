@@ -318,33 +318,8 @@ export class RedisClient {
         return client.options;
     }
 
-    public async dbsize(db?: number): Promise<number> {
-        return this.exec((await this.getClient(db)).dbsize());
-    }
-
-    public async get(key: string, db?: number): Promise<string | null> {
-        return this.exec((await this.getClient(db)).get(key));
-    }
-
-    public async lindex(key: string, index: number, db?: number): Promise<string> {
-        return this.exec((await this.getClient(db)).lindex(key, index));
-    }
-
-    public async lrange(key: string, start: number, stop: number, db?: number): Promise<string[]> {
-        return this.exec((await this.getClient(db)).lrange(key, start, stop));
-    }
-
-    public async info(section: string): Promise<string> {
-        return this.exec((await this.getClient()).info(section));
-    }
-
-    public async clusterScan(
-        clusterNodeId: string,
-        cursor: number | string,
-        matchOption: 'match' | 'MATCH',
-        pattern: string
-    ): Promise<[string, string[]]> {
-        return this.exec((await this.getClient(clusterNodeId)).scan(cursor, matchOption, pattern));
+    public async dbsize(dbOrNodeId?: number | string): Promise<number> {
+        return this.exec((await this.getClient(dbOrNodeId)).dbsize());
     }
 
     public async scan(
@@ -356,8 +331,33 @@ export class RedisClient {
         return this.exec((await this.getClient(db)).scan(cursor, matchOption, pattern));
     }
 
-    public async hlen(key: string, db?: number): Promise<number> {
-        return this.exec((await this.getClient(db)).hlen(key));
+    public async clusterScan(
+        clusterNodeId: string,
+        cursor: number | string,
+        matchOption: 'match' | 'MATCH',
+        pattern: string
+    ): Promise<[string, string[]]> {
+        return this.exec((await this.getClient(clusterNodeId)).scan(cursor, matchOption, pattern));
+    }
+
+    public async get(key: string, dbOrNodeId?: number | string): Promise<string | null> {
+        return this.exec((await this.getClient(dbOrNodeId)).get(key));
+    }
+
+    public async lindex(key: string, index: number, dbOrNodeId?: number | string): Promise<string> {
+        return this.exec((await this.getClient(dbOrNodeId)).lindex(key, index));
+    }
+
+    public async lrange(key: string, start: number, stop: number, dbOrNodeId?: number | string): Promise<string[]> {
+        return this.exec((await this.getClient(dbOrNodeId)).lrange(key, start, stop));
+    }
+
+    public async info(section: string): Promise<string> {
+        return this.exec((await this.getClient()).info(section));
+    }
+
+    public async hlen(key: string, dbOrNodeId?: number | string): Promise<number> {
+        return this.exec((await this.getClient(dbOrNodeId)).hlen(key));
     }
 
     public async hscan(
@@ -365,13 +365,13 @@ export class RedisClient {
         cursor: number | string,
         matchOption: 'match' | 'MATCH',
         pattern: string,
-        db?: number
+        dbOrNodeId?: number | string
     ): Promise<[string, string[]]> {
-        return this.exec((await this.getClient(db)).hscan(key, cursor, matchOption, pattern));
+        return this.exec((await this.getClient(dbOrNodeId)).hscan(key, cursor, matchOption, pattern));
     }
 
-    public async scard(key: string, db?: number): Promise<number> {
-        return this.exec((await this.getClient(db)).scard(key));
+    public async scard(key: string, dbOrNodeId?: number | string): Promise<number> {
+        return this.exec((await this.getClient(dbOrNodeId)).scard(key));
     }
 
     public async sscan(
@@ -379,9 +379,9 @@ export class RedisClient {
         cursor: number | string,
         matchOption: 'match' | 'MATCH',
         pattern: string,
-        db?: number
+        dbOrNodeId?: number | string
     ): Promise<[string, string[]]> {
-        return this.exec((await this.getClient(db)).sscan(key, cursor, matchOption, pattern));
+        return this.exec((await this.getClient(dbOrNodeId)).sscan(key, cursor, matchOption, pattern));
     }
 
     public async zscan(
@@ -389,24 +389,24 @@ export class RedisClient {
         cursor: number | string,
         matchOption: 'match' | 'MATCH',
         pattern: string,
-        db?: number
+        dbOrNodeId?: number | string
     ): Promise<[string, string[]]> {
-        return this.exec((await this.getClient(db)).zscan(key, cursor, matchOption, pattern));
+        return this.exec((await this.getClient(dbOrNodeId)).zscan(key, cursor, matchOption, pattern));
     }
 
-    public async zcard(key: string, db?: number): Promise<number> {
-        return this.exec((await this.getClient(db)).zcard(key));
+    public async zcard(key: string, dbOrNodeId?: number | string): Promise<number> {
+        return this.exec((await this.getClient(dbOrNodeId)).zcard(key));
     }
 
-    public async zrange(key: string, start: number, stop: number, db?: number): Promise<string[]> {
-        return this.exec((await this.getClient(db)).zrange(key, start, stop, 'WITHSCORES'));
+    public async zrange(key: string, start: number, stop: number, dbOrNodeId?: number | string): Promise<string[]> {
+        return this.exec((await this.getClient(dbOrNodeId)).zrange(key, start, stop, 'WITHSCORES'));
     }
 
-    public async llen(key: string, db?: number): Promise<number> {
-        return this.exec((await this.getClient(db)).llen(key));
+    public async llen(key: string, dbOrNodeId?: number | string): Promise<number> {
+        return this.exec((await this.getClient(dbOrNodeId)).llen(key));
     }
 
-    public async type(key: string, db?: number): Promise<string> {
-        return this.exec((await this.getClient(db)).type(key));
+    public async type(key: string, dbOrNodeId?: number | string): Promise<string> {
+        return this.exec((await this.getClient(dbOrNodeId)).type(key));
     }
 }

@@ -1,0 +1,13 @@
+/* Copyright (c) Microsoft Corporation.
+   Licensed under the MIT License. */
+
+.properties-container {
+    padding-top: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-bottom: 10px;
+}
+
+.indented {
+    margin-left: 8px;
+}

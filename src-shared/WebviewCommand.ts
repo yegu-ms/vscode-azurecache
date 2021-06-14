@@ -12,12 +12,11 @@ export enum WebviewCommand {
     CopyText = 'copyText',
     // Data viewer
     Title = 'title',
-    KeyName = 'keyName',
     CollectionSize = 'collectionSize',
     CollectionData = 'collectionData',
     CollectionElementData = 'collectionElementData',
     FilterChange = 'filterChange',
-    GetValue = 'loadKeyValue',
-    LoadMore = 'loadMore',
-    Loading = 'loading'
+    LoadKeys = 'loadKeys',
+    LoadKeyValue = 'loadKeyValue',
+    Loading = 'loading',
 }

@@ -1,12 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import {
-    createAzureClient,
-    IActionContext,
-    SubscriptionTreeItemBase,
-    AzExtTreeItem
-} from 'vscode-azureextensionui';
+import { createAzureClient, IActionContext, SubscriptionTreeItemBase, AzExtTreeItem } from 'vscode-azureextensionui';
 import { RedisManagementClient } from 'azure-arm-rediscache';
 import { RedisResourceClient } from '../../clients/RedisResourceClient';
 import { ParsedRedisListResult } from '../../parsed/ParsedRedisListResult';
@@ -30,14 +25,11 @@ export class AzureSubscriptionTreeItem extends SubscriptionTreeItemBase {
 
         const rmClient = createAzureClient(this.root, RedisManagementClient);
         const resClient = new RedisResourceClient(rmClient);
-        const redisCollection: ParsedRedisListResult =
-            !this.nextLink
-                ? await resClient.listResources()
-                : await resClient.listNextResources(this.nextLink);
+        const redisCollection: ParsedRedisListResult = !this.nextLink
+            ? await resClient.listResources()
+            : await resClient.listNextResources(this.nextLink);
         this.nextLink = redisCollection.nextLink;
 
-        return redisCollection.map((parsedRedisResource) =>
-            new AzureCacheItem(this, resClient, parsedRedisResource)
-        );
+        return redisCollection.map((parsedRedisResource) => new AzureCacheItem(this, resClient, parsedRedisResource));
     }
 }

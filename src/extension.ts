@@ -16,11 +16,10 @@ import { RedisClient } from './clients/RedisClient';
 import { ExtVars } from './ExtensionVariables';
 import { textInput } from './Input';
 import { quickPick } from './QuickPick';
-import { KeyContentProvider } from './KeyContentProvider';
-import { ParsedRedisResource } from '../src-shared/ParsedRedisResource';
 import { AzureAccountTreeItem } from './tree/azure/AzureAccountTreeItem';
 import { AzureCacheItem } from './tree/azure/AzureCacheItem';
 import { RedisDbFilterItem } from './tree/filter/RedisDbFilterItem';
+import { RedisClusterNodeFilterItem } from './tree/filter/RedisClusterNodeFilterItem';
 import { KeyFilterParentItem } from './tree/KeyFilterParentItem';
 import { KeyFilterItem } from './tree/filter/KeyFilterItem';
 import * as Strings from './Strings';
@@ -33,15 +32,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(ExtVars.outputChannel);
     registerUIExtensionVariables(ExtVars);
 
-    ExtVars.keyContentProvider = new KeyContentProvider();
-    context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(ExtVars.prefix, ExtVars.keyContentProvider)
-    );
-
     const azureAccountTreeItem = new AzureAccountTreeItem();
     context.subscriptions.push(azureAccountTreeItem);
 
-    ExtVars.treeDataProvider = new AzExtTreeDataProvider(azureAccountTreeItem, `${ExtVars.prefix}.loadMore`);
+    ExtVars.treeDataProvider = new AzExtTreeDataProvider(azureAccountTreeItem, `${ExtVars.prefix}.refresh`);
     ExtVars.treeView = vscode.window.createTreeView(ExtVars.prefix, { treeDataProvider: ExtVars.treeDataProvider });
     context.subscriptions.push(ExtVars.treeView);
 
@@ -79,14 +73,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     context.subscriptions.push(
         vscode.commands.registerCommand('azureCache.selectDatabases', async (treeItem: RedisDbFilterItem) => {
-            const picks = await quickPick(
-                treeItem.getDbSelections(),
-                Strings.StrSelectDbs
-            );
+            const picks = await quickPick(treeItem.getDbSelections(), Strings.StrSelectDbs);
             if (picks !== undefined) {
                 treeItem.setDbSelections(picks);
             }
         })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'azureCache.selectClusterNodes',
+            async (treeItem: RedisClusterNodeFilterItem) => {
+                const picks = await quickPick(treeItem.getClusterNodeSelections(), Strings.StrSelectClusterNodes);
+                if (picks !== undefined) {
+                    treeItem.setClusterNodeSelections(picks);
+                }
+            }
+        )
     );
 
     context.subscriptions.push(
@@ -119,21 +122,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand(
-            'azureCache.showStringItem',
-            async (parsedRedisResource: ParsedRedisResource, db: number | undefined, key: string) => {
-                await ExtVars.keyContentProvider.showKey(parsedRedisResource, db, 'string', key);
-            }
-        )
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('azureCache.showUnsupportedItem', () => {
-            vscode.window.showInformationMessage(Strings.ErrorUnsupportedKeyType);
-        })
-    );
-
     registerCommand(
         'azureCache.copyConnectionString',
         async (actionContext: IActionContext, treeItem?: AzureCacheItem) => {
@@ -151,10 +139,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 vscode.window.showErrorMessage(Strings.ErrorConnectionString);
             }
         }
-    );
-
-    registerCommand('azureCache.loadMore', (actionContext: IActionContext, treeItem: AzExtTreeItem) =>
-        ExtVars.treeDataProvider.loadMore(treeItem, actionContext)
     );
 
     registerCommand('azureCache.refresh', (_actionContext: IActionContext, treeItem?: AzExtTreeItem) =>
