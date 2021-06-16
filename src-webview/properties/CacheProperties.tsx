@@ -10,6 +10,7 @@ import { WebviewCommand } from '../../src-shared/WebviewCommand';
 import { WebviewMessage } from '../../src-shared/WebviewMessage';
 import { CollapsibleList } from './CollapsibleList';
 import { CopyableTextField } from './CopyableTextField';
+import { formatDbInfo } from '../Utils/StringUtils';
 import * as Strings from '../Strings';
 import './CacheProperties.css';
 import '../styles.css';
@@ -77,7 +78,7 @@ export class CacheProperties extends React.Component<{}, State> {
                         if (index >= 0) {
                             nvs.push({
                                 name: info.name,
-                                value: kvs[index].value,
+                                value: !kvs[index].key.startsWith('db', 0) ? kvs[index].value : formatDbInfo(kvs[index].value),
                             } as NamedValue);
                         }
                     });
@@ -122,11 +123,13 @@ export class CacheProperties extends React.Component<{}, State> {
                             id="primaryAccessKey"
                             label={Strings.StrPrimaryAccessKey}
                             value={accessKey}
+                            password={true}
                         />
                         <CopyableTextField
                             id="primaryConnectionString"
                             label={Strings.StrPrimaryConnectionStr}
                             value={connectionString}
+                            password={true}
                         />
                         <CollapsibleList
                             label={Strings.StrGeoReplication}

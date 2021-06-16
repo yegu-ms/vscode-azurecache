@@ -97,6 +97,10 @@
     background-color: var(--vscode-list-inactiveSelectionBackground);
 }
 
+.ms-TextField-reveal {
+    background-color: var(--vscode-editor-background);
+}
+
 .ms-TextField-fieldGroup {
     border-color: var(--vscode-editor-foreground);
 }

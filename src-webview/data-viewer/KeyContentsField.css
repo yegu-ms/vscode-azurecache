@@ -29,8 +29,10 @@
     background-color: var(--vscode-peekViewTitle-background);
     font-size: large;
     border: 1px solid var(--vscode-peekViewTitleLabel-foreground);
+    display: flex;
+    flex-wrap: wrap;
     overflow-y: auto;
-    padding: 0px 8px;
+    padding: 12px;
     height: 30vh;
 }
 

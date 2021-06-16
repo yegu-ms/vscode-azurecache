@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { createAzureClient, IActionContext, SubscriptionTreeItemBase, AzExtTreeItem } from 'vscode-azureextensionui';
-import { RedisManagementClient } from 'azure-arm-rediscache';
+import { createAzureClient, IActionContext, SubscriptionTreeItemBase } from 'vscode-azureextensionui';
+import { RedisManagementClient } from '@azure/arm-rediscache';
 import { RedisResourceClient } from '../../clients/RedisResourceClient';
 import { ParsedRedisListResult } from '../../parsed/ParsedRedisListResult';
 import { AzureCacheItem } from './AzureCacheItem';
-import { AzureCacheClusterItem } from './AzureCacheClusterItem';
 
 /**
  * Tree item for an Azure subscription.
@@ -18,7 +17,7 @@ export class AzureSubscriptionTreeItem extends SubscriptionTreeItemBase {
         return this.nextLink !== undefined;
     }
 
-    public async loadMoreChildrenImpl(clearCache: boolean, _context: IActionContext): Promise<AzExtTreeItem[]> {
+    public async loadMoreChildrenImpl(clearCache: boolean, _context: IActionContext): Promise<AzureCacheItem[]> {
         if (clearCache) {
             this.nextLink = undefined;
         }

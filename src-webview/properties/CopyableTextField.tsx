@@ -9,21 +9,22 @@ import { StrCopied, StrCopyToClipboard } from '../Strings';
 import { CopyButton } from './CopyButton';
 import '../styles.css';
 
-interface State {
-    showClicked: boolean;
-}
-
-interface Props {
-    id: string;
-    label?: string;
-    value?: string | number;
-}
-
 const tooltipProps = { gapSpace: 0 };
 const tooltipStyles: Partial<ITooltipHostStyles> = { root: { display: 'inline-block' } };
 const stackTokens: IStackTokens = {
     childrenGap: 5,
 };
+
+interface Props {
+    id: string;
+    label?: string;
+    value?: string | number;
+    password?: boolean;
+}
+
+interface State {
+    showClicked: boolean;
+}
 
 export class CopyableTextField extends React.Component<Props, State> {
     state = {
@@ -47,17 +48,29 @@ export class CopyableTextField extends React.Component<Props, State> {
     };
 
     render(): JSX.Element | null {
-        if (this.props.value === undefined) {
+        const { value } = this.props;
+
+        if (value === undefined) {
             return null;
         }
 
-        const value = typeof this.props.value === 'number' ? this.props.value.toString() : this.props.value;
+        const displayValue = typeof value === 'number' ? String(value) : value;
         const tooltipText = this.state.showClicked ? StrCopied : StrCopyToClipboard;
 
         return (
             <Stack horizontal tokens={stackTokens}>
                 <Stack.Item grow align="end">
-                    <TextField label={this.props.label} readOnly value={value} />
+                    {this.props.password === undefined || !this.props.password ? (
+                        <TextField label={this.props.label} readOnly value={displayValue} />
+                    ) : (
+                        <TextField
+                            label={this.props.label}
+                            readOnly
+                            value={displayValue}
+                            type="password"
+                            canRevealPassword
+                        />
+                    )}
                 </Stack.Item>
                 <Stack.Item align="end">
                     <TooltipHost

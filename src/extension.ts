@@ -35,13 +35,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const azureAccountTreeItem = new AzureAccountTreeItem();
     context.subscriptions.push(azureAccountTreeItem);
 
-    ExtVars.treeDataProvider = new AzExtTreeDataProvider(azureAccountTreeItem, `${ExtVars.prefix}.refresh`);
+    ExtVars.treeDataProvider = new AzExtTreeDataProvider(azureAccountTreeItem, `${ExtVars.prefix}.loadMore`);
     ExtVars.treeView = vscode.window.createTreeView(ExtVars.prefix, { treeDataProvider: ExtVars.treeDataProvider });
     context.subscriptions.push(ExtVars.treeView);
 
-    const accountExtension: vscode.Extension<AzureAccount> | undefined = vscode.extensions.getExtension<AzureAccount>(
-        'ms-vscode.azure-account'
-    );
+    const accountExtension: vscode.Extension<AzureAccount> | undefined =
+        vscode.extensions.getExtension<AzureAccount>('ms-vscode.azure-account');
 
     if (accountExtension) {
         const azureAccount = accountExtension.exports;
@@ -122,6 +121,37 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
+    registerCommand('azureCache.loadMore', (actionContext: IActionContext, treeItem: AzExtTreeItem) =>
+        ExtVars.treeDataProvider.loadMore(treeItem, actionContext)
+    );
+
+    registerCommand('azureCache.selectSubscriptions', () => {
+        vscode.commands.executeCommand('azure-account.selectSubscriptions');
+    });
+
+    registerCommand('azureCache.refreshSubscription', (_actionContext: IActionContext, treeItem?: AzExtTreeItem) =>
+        ExtVars.treeDataProvider.refresh(treeItem)
+    );
+
+    registerCommand('azureCache.refreshCache', (_actionContext: IActionContext, treeItem?: AzureCacheItem) =>
+        ExtVars.treeDataProvider.refresh(treeItem)
+    );
+
+    registerCommand('azureCache.refreshKeyFilter', (_actionContext: IActionContext, treeItem?: KeyFilterItem) =>
+        ExtVars.treeDataProvider.refresh(treeItem)
+    );
+
+    registerCommand('azureCache.openInPortal', async (actionContext: IActionContext, treeItem?: AzureCacheItem) => {
+        if (treeItem === undefined) {
+            treeItem = (await ExtVars.treeDataProvider.showTreeItemPicker(
+                AzureCacheItem.contextValue,
+                actionContext
+            )) as AzureCacheItem;
+        }
+
+        await treeItem.openInPortal();
+    });
+
     registerCommand(
         'azureCache.copyConnectionString',
         async (actionContext: IActionContext, treeItem?: AzureCacheItem) => {
@@ -140,25 +170,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
         }
     );
-
-    registerCommand('azureCache.refresh', (_actionContext: IActionContext, treeItem?: AzExtTreeItem) =>
-        ExtVars.treeDataProvider.refresh(treeItem)
-    );
-
-    registerCommand('azureCache.openInPortal', async (actionContext: IActionContext, treeItem?: AzureCacheItem) => {
-        if (treeItem === undefined) {
-            treeItem = (await ExtVars.treeDataProvider.showTreeItemPicker(
-                AzureCacheItem.contextValue,
-                actionContext
-            )) as AzureCacheItem;
-        }
-
-        await treeItem.openInPortal();
-    });
-
-    registerCommand('azureCache.selectSubscriptions', () => {
-        vscode.commands.executeCommand('azure-account.selectSubscriptions');
-    });
 }
 
 // This method is called when extension is deactivated

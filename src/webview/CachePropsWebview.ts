@@ -29,7 +29,7 @@ export class CachePropsWebview extends BaseWebview {
         this.postMessage(WebviewCommand.View, WebviewView.CacheProperties);
     }
 
-    public async initData(parsedRedisResource: ParsedRedisResource): Promise<void> {
+    protected async initData(parsedRedisResource: ParsedRedisResource): Promise<void> {
         this.postMessage(WebviewCommand.RedisInfo, await this.parent.loadInfo(parsedRedisResource));
         this.postMessage(WebviewCommand.ParsedRedisResource, parsedRedisResource);
         this.postMessage(WebviewCommand.AccessKey, await parsedRedisResource.accessKey);

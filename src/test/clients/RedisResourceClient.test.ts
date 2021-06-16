@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 import * as assert from 'assert';
-import RedisManagementClient from 'azure-arm-rediscache';
-import { RedisAccessKeys, RedisListResult, RedisResource } from 'azure-arm-rediscache/lib/models';
+import { RedisManagementClient, RedisManagementModels } from '@azure/arm-rediscache';
 import { Redis } from 'azure-arm-rediscache/lib/operations';
 import { ServiceClientCredentials } from 'ms-rest';
 import * as sinon from 'sinon';
@@ -43,10 +42,10 @@ describe('RedisResourceClient', () => {
             capacity: 1,
         },
         location: 'West US',
-    } as RedisResource;
+    } as RedisManagementModels.RedisResource;
 
     // Shared access keys for above resource
-    const sampleAccessKeys: RedisAccessKeys = {
+    const sampleAccessKeys: RedisManagementModels.RedisAccessKeys = {
         primaryKey: 'key',
         secondaryKey: undefined,
     };
@@ -75,7 +74,9 @@ describe('RedisResourceClient', () => {
     describe('listResources', () => {
         it('should return list of parsed Redis resources', async () => {
             // Stub the rmClient.redis.list() method
-            const redisListResult: RedisListResult = Object.assign([sampleRedisResource], { nextLink: 'someLink' });
+            const redisListResult: RedisManagementModels.RedisListResult = Object.assign([sampleRedisResource], {
+                nextLink: 'someLink',
+            });
             const stubbedRedis = stubInterface<Redis>();
             stubbedRedis.list.resolves(redisListResult);
             stubbedRedis.listKeys.resolves(sampleAccessKeys);
@@ -93,7 +94,7 @@ describe('RedisResourceClient', () => {
 
         it('should handle empty response', async () => {
             // Stub the rmClient.redis.list() method
-            const redisListResult: RedisListResult = Object.assign([], { nextLink: undefined });
+            const redisListResult: RedisManagementModels.RedisListResult = Object.assign([], { nextLink: undefined });
             const stubbedRedis = stubInterface<Redis>();
             stubbedRedis.list.resolves(redisListResult);
             sandbox.stub(rmClient, 'redis').value(stubbedRedis);
@@ -109,13 +110,13 @@ describe('RedisResourceClient', () => {
 
         it('should ignore incomplete RedisResources', async () => {
             // Stub the rmClient.redis.list() method to return an incomplete RedisResource
-            const redisListResult: RedisListResult = Object.assign(
+            const redisListResult: RedisManagementModels.RedisListResult = Object.assign(
                 [
                     {
                         name: 'mycache',
                         port: 6379,
                         sslPort: 6380,
-                    } as RedisResource,
+                    } as RedisManagementModels.RedisResource,
                 ],
                 { nextLink: 'someLink' }
             );
@@ -136,7 +137,9 @@ describe('RedisResourceClient', () => {
     describe('listNextResources', () => {
         it('should return next list of parsed Redis resources', async () => {
             // Stub the rmClient.redis.listNext() method
-            const redisListResult: RedisListResult = Object.assign([sampleRedisResource], { nextLink: undefined });
+            const redisListResult: RedisManagementModels.RedisListResult = Object.assign([sampleRedisResource], {
+                nextLink: undefined,
+            });
             const stubbedRedis = stubInterface<Redis>();
             stubbedRedis.listNext.resolves(redisListResult);
             stubbedRedis.listKeys.resolves(sampleAccessKeys);
@@ -154,7 +157,7 @@ describe('RedisResourceClient', () => {
 
         it('should handle empty response', async () => {
             // Stub the rmClient.redis.listNext() method
-            const redisListResult: RedisListResult = Object.assign([], { nextLink: undefined });
+            const redisListResult: RedisManagementModels.RedisListResult = Object.assign([], { nextLink: undefined });
             const stubbedRedis = stubInterface<Redis>();
             stubbedRedis.listNext.resolves(redisListResult);
             sandbox.stub(rmClient, 'redis').value(stubbedRedis);
@@ -170,13 +173,13 @@ describe('RedisResourceClient', () => {
 
         it('should ignore incomplete RedisResources', async () => {
             // Stub the rmClient.redis.listNext() method to return incomplete RedisResource
-            const redisListResult: RedisListResult = Object.assign(
+            const redisListResult: RedisManagementModels.RedisListResult = Object.assign(
                 [
                     {
                         name: 'mycache',
                         port: 6379,
                         sslPort: 6380,
-                    } as RedisResource,
+                    } as RedisManagementModels.RedisResource,
                 ],
                 { nextLink: undefined }
             );
@@ -197,7 +200,7 @@ describe('RedisResourceClient', () => {
     describe('getAccessKey', () => {
         it('should return the primary key if exists', async () => {
             // Stub the rmClient.redis.listKeys() method
-            const allAccessKeys: RedisAccessKeys = {
+            const allAccessKeys: RedisManagementModels.RedisAccessKeys = {
                 primaryKey: 'myPrimaryKey',
                 secondaryKey: undefined,
             };
@@ -214,7 +217,7 @@ describe('RedisResourceClient', () => {
 
         it('should return secondary key if exists and primary key is missing', async () => {
             // Stub the rmClient.redis.listKeys() method
-            const allAccessKeys: RedisAccessKeys = {
+            const allAccessKeys: RedisManagementModels.RedisAccessKeys = {
                 primaryKey: undefined,
                 secondaryKey: 'mySecKey',
             };
@@ -231,7 +234,7 @@ describe('RedisResourceClient', () => {
 
         it('should throw an error if both keys are invalid', async () => {
             // Stub the rmClient.redis.listKeys() method
-            const allAccessKeys: RedisAccessKeys = {
+            const allAccessKeys: RedisManagementModels.RedisAccessKeys = {
                 primaryKey: undefined,
                 secondaryKey: undefined,
             };

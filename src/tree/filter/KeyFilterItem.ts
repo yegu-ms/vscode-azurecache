@@ -18,7 +18,7 @@ import { StrAllKeys, StrKeyFilter } from '../../Strings';
  * 2. As a child element of RedisDbFilterItem if it's a non-clustered cache.
  */
 export class KeyFilterItem extends KeyCollectionItem {
-    private static readonly contextValue = 'keyFilterItem';
+    private static readonly contextValue = 'keyFilter';
     private static readonly commandId = 'azureCache.viewFilteredKeys';
     private static readonly incrementCount = 1;
 

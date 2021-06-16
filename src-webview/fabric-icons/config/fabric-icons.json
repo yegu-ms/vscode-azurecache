@@ -23,6 +23,14 @@
             "unicode": "E8C8"
         },
         {
+            "name": "Hide",
+            "unicode": "ED1A"
+          },
+              {
+            "name": "RedEye",
+            "unicode": "E7B3"
+        },
+        {
             "name": "Tag",
             "unicode": "E8EC"
         }

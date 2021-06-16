@@ -22,7 +22,7 @@ export class CollectionWebview extends BaseWebview {
         this.postMessage(WebviewCommand.Title, this.parent.label);
     }
 
-    public async initData(): Promise<void> {
+    protected async initData(): Promise<void> {
         this.postMessage(WebviewCommand.CollectionSize, await this.parent.getSize());
         this.loadAndSendNextChildren(true);
     }

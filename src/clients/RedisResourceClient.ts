@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import RedisManagementClient from 'azure-arm-rediscache';
-import { RedisListResult, RedisResource } from 'azure-arm-rediscache/lib/models';
+import { RedisManagementClient, RedisManagementModels } from '@azure/arm-rediscache';
 import { ExtVars } from '../ExtensionVariables';
 import { ParsedRedisListResult } from '../parsed/ParsedRedisListResult';
 import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
@@ -83,7 +82,9 @@ export class RedisResourceClient {
      * Parses RedisListResult into ParsedRedisListResult which contains ParsedRedisResources.
      * @param resources Response of a list Redis operation
      */
-    private async parseRedisListResult(resources: RedisListResult): Promise<ParsedRedisListResult> {
+    private async parseRedisListResult(
+        resources: RedisManagementModels.RedisListResult
+    ): Promise<ParsedRedisListResult> {
         const parsedResources: ParsedRedisResource[] = [];
 
         for (const resource of resources) {
@@ -106,7 +107,7 @@ export class RedisResourceClient {
      *
      * @param redisResource RedisResource
      */
-    private async parseRedisResource(redisResource: RedisResource): Promise<ParsedRedisResource> {
+    private async parseRedisResource(redisResource: RedisManagementModels.RedisResource): Promise<ParsedRedisResource> {
         if (redisResource.id === undefined) {
             throw new Error(Strings.ErrorMissingResourceId);
         }

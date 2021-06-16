@@ -29,8 +29,9 @@ export const StrCopyToClipboard = 'Copy to clipboard';
 
 export const StrTotal = '$$$ total';
 export const StrContents = "Contents of '$$$'";
-export const StrLoadMore = 'Load more...';
-export const StrLoading = 'Loading...';
+export const StrLoadMoreKeys = '(Load more keys...)';
+export const StrLoadMoreValues = '(Load more values...)';
+export const StrLoading = '(Loading...)';
 export const StrText = 'Text';
 export const StrBinary = 'Binary';
 export const StrJson = 'JSON';
@@ -60,4 +61,10 @@ export const StrRedisInfo = [
     { key: 'expired_keys', name: 'Expired keys' },
     { key: 'evicted_keys', name: 'Evicted keys' },
     { key: 'pubsub_channels', name: 'Pub/Sub channels' },
+];
+
+export const StrDbInfo = [
+    { key: 'keys', name: 'Keys' },
+    { key: 'expires', name: 'Expiring' },
+    { key: 'avg_ttl', name: 'Average TTL' },
 ];

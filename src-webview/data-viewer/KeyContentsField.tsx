@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { Pivot, PivotItem } from '@fluentui/react';
-import { stringToBinary } from '../../src/utils/StringUtils';
+import { stringToBinary } from '../Utils/StringUtils';
 import { StrText, StrBinary, StrJson } from '../Strings';
 import './KeyContentsField.css';
 import '../styles.css';
@@ -26,18 +26,18 @@ export function KeyContentsField(props: Props): React.ReactElement {
             <Pivot className="content-tabs">
                 <PivotItem className="content-tab-link" headerText={StrText}>
                     <div className="content-field">
-                        <pre>{props.value}</pre>
+                        <code>{props.value}</code>
                     </div>
                 </PivotItem>
                 <PivotItem className="content-tab-link" headerText={StrBinary}>
                     <div className="content-field">
-                        <pre>{stringToBinary(props.value)}</pre>
+                        <code>{stringToBinary(props.value)}</code>
                     </div>
                 </PivotItem>
                 {json && Object.keys(json).length !== 0 && (
                     <PivotItem className="content-tab-link" headerText={StrJson}>
                         <div className="content-field">
-                            <pre>{JSON.stringify(json, null, 4)}</pre>
+                            <code>{JSON.stringify(json, null, 4)}</code>
                         </div>
                     </PivotItem>
                 )}

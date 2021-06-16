@@ -12,8 +12,8 @@ import {
     IRenderFunction,
     IStyle,
     DetailsRow,
-    SelectionZone,
     Selection,
+    SelectionZone,
     SelectionMode,
     ActionButton,
     Label,
@@ -26,10 +26,9 @@ import {
 import { CollectionWebviewData } from '../../src-shared/CollectionWebviewData';
 import { WebviewCommand } from '../../src-shared/WebviewCommand';
 import { WebviewMessage } from '../../src-shared/WebviewMessage';
-import { StrTotal, StrContents, StrLoadMore, StrLoading } from '../Strings';
+import { StrTotal, StrContents, StrLoadMoreKeys, StrLoadMoreValues, StrLoading } from '../Strings';
 import { CollectionViewItem, CollectionViewItemValue } from './CollectionViewItem';
 import { CollectionElement } from '../../src-shared/CollectionElement';
-import { CollectionType } from './CollectionType';
 import { KeyContentsField } from './KeyContentsField';
 import './CollectionView.css';
 import '../styles.css';
@@ -47,7 +46,7 @@ const iconButtonStyles: Partial<IButtonStyles> = {
 };
 
 const cancelIcon: IIconProps = {
-    iconName: 'ChevronDownMed',
+    iconName: 'ChromeClose',
     styles: { root: { color: 'var(--vscode-peekViewTitleLabel-foreground)' } },
 };
 
@@ -68,13 +67,13 @@ const columns: IColumn[] = [
 
 interface State {
     title: string;
-    type?: CollectionType;
     key?: string;
     viewItems: CollectionViewItem[];
     viewItemGroups: IGroup[];
     viewItemValues: CollectionViewItemValue[];
     size: number;
     hasMore: boolean;
+    selection: Selection;
     currentKey: string;
     currentValue?: string;
     isLoading: boolean;
@@ -93,6 +92,7 @@ export class CollectionView extends React.Component<{}, State> {
             viewItemGroups: [],
             viewItemValues: [],
             hasMore: false,
+            selection: new Selection(),
             currentKey: '',
             currentValue: '',
             isLoading: false,
@@ -105,25 +105,29 @@ export class CollectionView extends React.Component<{}, State> {
         window.addEventListener('message', (event) => {
             const message: WebviewMessage = event.data;
             if (message.command === WebviewCommand.Title) {
-                const title = message.value as CollectionType;
+                const title = message.value as string;
                 this.setState({ title });
             } else if (message.command === WebviewCommand.CollectionSize) {
                 const size = message.value as number;
                 this.setState({ size });
             } else if (message.command === WebviewCommand.CollectionData) {
                 const { data, hasMore, clearCache } = message.value as CollectionWebviewData;
-                const { viewItemValues } = this.state;
+                const { viewItems, viewItemGroups, viewItemValues, selection } = this.state;
+                // Clear previous view items if clearCache is true
+                const newViewItems: CollectionViewItem[] = !clearCache ? [...viewItems] : [];
+                const newViewItemGroups: IGroup[] = !clearCache ? [...viewItemGroups] : [];
+                const newViewItemValues: CollectionViewItemValue[] = !clearCache ? [...viewItemValues] : [];
 
-                const newViewItems = data.map((element) => ({
-                    element,
-                    selected: false,
-                    loading: false,
-                }));
+                data.map((element) =>
+                    newViewItems.push({
+                        element,
+                        selected: false,
+                        loading: false,
+                    })
+                );
 
-                const newViewItemGroups: IGroup[] = [];
-                const newViewItemValues: CollectionViewItemValue[] = [];
-                let startIndex = clearCache ? 0 : viewItemValues.length;
-                newViewItems.forEach((item) => {
+                let startIndex = newViewItemValues.length;
+                for (const item of newViewItems) {
                     const count = item.element.value !== undefined ? item.element.value.length : 0;
                     const extra = item.element.hasMore ? 1 : 0;
                     newViewItemGroups.push({
@@ -135,9 +139,9 @@ export class CollectionView extends React.Component<{}, State> {
                     });
 
                     if (count > 0) {
-                        item.element.value?.map((value) =>
+                        item.element.value?.map((value, index) =>
                             newViewItemValues.push({
-                                key: value.key,
+                                key: `${value.key}-${index}`,
                                 value1: value.id !== undefined ? value.id : value.value,
                                 value2: value.id !== undefined ? value.value : undefined,
                                 loadAction: false,
@@ -148,28 +152,24 @@ export class CollectionView extends React.Component<{}, State> {
                     if (extra > 0) {
                         newViewItemValues.push({
                             key: item.element.key,
-                            value1: StrLoadMore,
+                            value1: StrLoadMoreValues,
                             loadAction: true,
                         });
                     }
                     startIndex += count + extra;
-                });
+                }
 
-                this.setState((prevState) => ({
-                    // Clear previous viewItems if clearCache is true
-                    viewItems: clearCache ? newViewItems : [...prevState.viewItems, ...newViewItems],
-                    viewItemGroups: clearCache
-                        ? newViewItemGroups
-                        : [...prevState.viewItemGroups, ...newViewItemGroups],
-                    viewItemValues: clearCache
-                        ? newViewItemValues
-                        : [...prevState.viewItemValues, ...newViewItemValues],
+                selection.setItems(newViewItemValues);
+                this.setState({
+                    viewItems: newViewItems,
+                    viewItemGroups: newViewItemGroups,
+                    viewItemValues: newViewItemValues,
                     hasMore,
                     isLoading: false,
-                }));
+                });
             } else if (message.command === WebviewCommand.CollectionElementData) {
                 const data = message.value as CollectionElement;
-                const { viewItems, viewItemGroups, viewItemValues } = this.state;
+                const { viewItems, viewItemGroups, viewItemValues, selection } = this.state;
                 const index = viewItems.findIndex((el) => el.element.key === data.key);
                 if (index >= 0) {
                     viewItems[index] = { ...viewItems[index], element: data };
@@ -196,9 +196,9 @@ export class CollectionView extends React.Component<{}, State> {
                     });
 
                     if (count > 0) {
-                        data.value?.map((value) =>
+                        data.value?.map((value, index) =>
                             newViewItemValues.push({
-                                key: value.key,
+                                key: `${value.key}-${index}`,
                                 value1: value.id !== undefined ? value.id : value.value,
                                 value2: value.id !== undefined ? value.value : undefined,
                                 loadAction: false,
@@ -209,7 +209,7 @@ export class CollectionView extends React.Component<{}, State> {
                     if (extra > 0) {
                         newViewItemValues.push({
                             key: data.key,
-                            value1: StrLoadMore,
+                            value1: StrLoadMoreValues,
                             loadAction: true,
                         });
                     }
@@ -229,6 +229,7 @@ export class CollectionView extends React.Component<{}, State> {
                         startIndex += viewItemGroups[i].count;
                     }
 
+                    selection.setItems(newViewItemValues);
                     this.setState({ viewItems, viewItemGroups: newViewItemGroups, viewItemValues: newViewItemValues });
                 }
             } else if (message.command === WebviewCommand.Loading) {
@@ -267,17 +268,21 @@ export class CollectionView extends React.Component<{}, State> {
         );
     };
 
-    onRenderCell = (nestingDepth?: number, item?: CollectionViewItemValue, index?: number): JSX.Element => (
-        <DetailsRow
-            columns={columns}
-            groupNestingDepth={nestingDepth}
-            item={item}
-            itemIndex={index !== undefined ? index : 0}
-            selection={this.selection}
-            selectionMode={SelectionMode.none}
-            compact={true}
-        />
-    );
+    onRenderCell = (nestingDepth?: number, item?: CollectionViewItemValue, index?: number): JSX.Element => {
+        const { selection } = this.state;
+
+        return (
+            <DetailsRow
+                columns={columns}
+                groupNestingDepth={nestingDepth}
+                item={item}
+                itemIndex={index !== undefined ? index : 0}
+                selection={selection}
+                selectionMode={SelectionMode.none}
+                compact={true}
+            />
+        );
+    };
 
     onItemInvoked = (obj?: IObjectWithKey, itemIndex?: number, _event?: Event): void => {
         if (obj === undefined) {
@@ -296,11 +301,12 @@ export class CollectionView extends React.Component<{}, State> {
             const index = viewItems.findIndex((el) => el.element.key === item.key);
             if (index >= 0 && itemIndex !== undefined) {
                 const { viewItemValues } = this.state;
-                viewItemValues[itemIndex] = {
+                const newViewItemValues = [...viewItemValues];
+                newViewItemValues[itemIndex] = {
                     ...viewItemValues[itemIndex],
                     value1: StrLoading,
                 };
-                this.setState({ viewItemValues });
+                this.setState({ viewItemValues: newViewItemValues });
                 vscode.postMessage({
                     command: WebviewCommand.LoadKeyValue,
                     value: viewItems[index].element,
@@ -332,23 +338,21 @@ export class CollectionView extends React.Component<{}, State> {
             title,
             size,
             isModalOpen,
+            selection,
             currentKey,
             currentValue,
         } = this.state;
-        const total = StrTotal.replace('$$$', String(size));
-
-        this.selection.setItems(viewItemValues);
 
         return (
             <div className="dataviewer-container">
                 <h2>
-                    {title} {size !== 0 && ` (${total})`}
+                    {title} {size !== 0 && ` (${StrTotal.replace('$$$', String(size))})`}
                 </h2>
 
                 <div className="list-container">
                     <div className="list-view">
                         <SelectionZone
-                            selection={this.selection}
+                            selection={selection}
                             selectionMode={SelectionMode.none}
                             onItemInvoked={this.onItemInvoked}
                         >
@@ -357,13 +361,13 @@ export class CollectionView extends React.Component<{}, State> {
                                 groupProps={{ onRenderHeader: this.onRenderHeader }}
                                 items={viewItemValues}
                                 onRenderCell={this.onRenderCell}
-                                selection={this.selection}
+                                selection={selection}
                                 selectionMode={SelectionMode.none}
                                 compact={true}
                             />
                         </SelectionZone>
                     </div>
-                    {!isLoading && hasMore && <ActionButton text={StrLoadMore} onClick={this.loadKeys} />}
+                    {!isLoading && hasMore && <ActionButton text={StrLoadMoreKeys} onClick={this.loadKeys} />}
                     {isLoading && <Label>{StrLoading}</Label>}
                     <Modal
                         containerClassName="content-modal-container"
@@ -372,7 +376,7 @@ export class CollectionView extends React.Component<{}, State> {
                         isBlocking={false}
                     >
                         <div className="content-modal-header">
-                            <span>{StrContents.replace('$$$', currentKey)}</span>
+                            <span>{StrContents.replace('$$$', currentKey.split('-')[0])}</span>
                             <IconButton styles={iconButtonStyles} iconProps={cancelIcon} onClick={this.hideModal} />
                         </div>
                         <div className="content-modal-body">

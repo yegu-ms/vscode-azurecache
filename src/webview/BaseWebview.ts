@@ -21,7 +21,7 @@ export abstract class BaseWebview {
     protected abstract readonly viewType: string;
     public abstract refresh(data: unknown): Promise<void>;
     protected abstract initView(): Promise<void>;
-    public abstract initData(data: unknown): Promise<void>;
+    protected abstract initData(data: unknown): Promise<void>;
     protected abstract onDidReceiveMessage(message: WebviewMessage): void;
     protected onDidDispose?(): void;
 
@@ -77,7 +77,7 @@ export abstract class BaseWebview {
         this.postMessage(WebviewCommand.FontUri, fontPathWebviewUri);
 
         // Send data to webview
-        this.initView();
+        await this.initView();
         this.initData(data);
     }
 
