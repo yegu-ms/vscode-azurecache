@@ -28,6 +28,8 @@ export const StrCopied = 'Copied';
 export const StrCopyToClipboard = 'Copy to clipboard';
 
 export const StrTotal = '$$$ total';
+export const StrDb = 'Db';
+export const StrShard = 'Shard';
 export const StrContents = "Contents of '$$$'";
 export const StrLoadMoreKeys = '(Load more keys...)';
 export const StrLoadMoreValues = '(Load more values...)';
@@ -36,7 +38,14 @@ export const StrText = 'Text';
 export const StrBinary = 'Binary';
 export const StrJson = 'JSON';
 
-export const StrHashFieldFilter = 'Hash field filter';
+export const StrKeyTypes = {
+    hash: 'Hash',
+    list: 'List',
+    set: 'Set',
+    string: 'String',
+    zset: 'Sorted Set',
+    unknown: 'Unknown',
+};
 
 export const StrRedisInfo = [
     { key: 'redis_version', name: 'Redis version' },

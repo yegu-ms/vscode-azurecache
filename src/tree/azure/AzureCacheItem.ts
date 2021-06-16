@@ -151,7 +151,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
 
         if (!this.isClustered) {
             this.dbs?.forEach((item) => {
-                if (selected.findIndex((s) => s.id === String(item.id)) >= 0) {
+                if (selected.findIndex((s) => s.id === item.id.toString()) >= 0) {
                     changed = changed ? true : item.selected !== true;
                     item.selected = true;
                 } else {
@@ -172,7 +172,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         }
 
         if (changed) {
-            this.refresh();
+            this.refreshImpl();
         }
     }
 
@@ -180,7 +180,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         if (!this.isClustered) {
             return this.dbs !== undefined
                 ? this.dbs.map((el) => ({
-                      id: String(el.id),
+                      id: el.id.toString(),
                       selected: el.selected,
                   }))
                 : [];
@@ -200,7 +200,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
                 ? this.dbs
                       .filter((el) => el.selected)
                       .map((el) => ({
-                          id: String(el.id),
+                          id: el.id.toString(),
                           selected: el.selected,
                       }))
                 : [];
@@ -235,7 +235,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
                 pattern: filterExpr,
                 item: new KeyFilterItem(this, count, filterExpr),
             } as KeyFilter);
-            this.refresh();
+            this.refreshImpl();
             return count;
         }
 
@@ -251,7 +251,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         const i = this.filters.findIndex((filter) => filter.index === index);
         if (this.filters[i].pattern !== filterExpr) {
             this.filters[i].pattern = filterExpr;
-            this.filters[i].item.refresh();
+            this.filters[i].item.refreshImpl();
         }
     }
 
@@ -259,7 +259,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         const i = this.filters.findIndex((filter) => filter.index === index);
         if (i >= 0) {
             this.filters.splice(i, 1);
-            this.refresh();
+            this.refreshImpl();
         }
     }
 

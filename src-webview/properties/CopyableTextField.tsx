@@ -54,7 +54,7 @@ export class CopyableTextField extends React.Component<Props, State> {
             return null;
         }
 
-        const displayValue = typeof value === 'number' ? String(value) : value;
+        const displayValue = typeof value === 'number' ? value.toString() : value;
         const tooltipText = this.state.showClicked ? StrCopied : StrCopyToClipboard;
 
         return (

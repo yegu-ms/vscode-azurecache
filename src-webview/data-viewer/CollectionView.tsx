@@ -26,7 +26,16 @@ import {
 import { CollectionWebviewData } from '../../src-shared/CollectionWebviewData';
 import { WebviewCommand } from '../../src-shared/WebviewCommand';
 import { WebviewMessage } from '../../src-shared/WebviewMessage';
-import { StrTotal, StrContents, StrLoadMoreKeys, StrLoadMoreValues, StrLoading } from '../Strings';
+import {
+    StrTotal,
+    StrDb,
+    StrShard,
+    StrKeyTypes,
+    StrContents,
+    StrLoadMoreKeys,
+    StrLoadMoreValues,
+    StrLoading,
+} from '../Strings';
 import { CollectionViewItem, CollectionViewItemValue } from './CollectionViewItem';
 import { CollectionElement } from '../../src-shared/CollectionElement';
 import { KeyContentsField } from './KeyContentsField';
@@ -132,7 +141,10 @@ export class CollectionView extends React.Component<{}, State> {
                     const extra = item.element.hasMore ? 1 : 0;
                     newViewItemGroups.push({
                         key: item.element.key,
-                        name: item.element.key + (item.element.type ? ` (${item.element.type})` : ''),
+                        name: `${item.element.key} (${StrKeyTypes[item.element.type]}`
+                            + (item.element.db !== undefined ? ` | ${StrDb}: ${item.element.db}` : '')
+                            + (item.element.shard !== undefined ? ` | ${StrShard}: ${item.element.shard}` : '')
+                            + ')',
                         count: count + extra,
                         startIndex,
                         isCollapsed: true,
@@ -346,7 +358,7 @@ export class CollectionView extends React.Component<{}, State> {
         return (
             <div className="dataviewer-container">
                 <h2>
-                    {title} {size !== 0 && ` (${StrTotal.replace('$$$', String(size))})`}
+                    {title} {size !== 0 && ` (${StrTotal.replace('$$$', size.toString())})`}
                 </h2>
 
                 <div className="list-container">

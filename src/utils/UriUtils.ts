@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { ExtVars } from '../ExtensionVariables';
 import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
 import { ErrorInvalidUri } from '../Strings';
-import { KeyType } from '../KeyType';
+import { KeyType } from '../../src-shared/KeyType';
 
 /**
  * Represents the data included in a show-key request.

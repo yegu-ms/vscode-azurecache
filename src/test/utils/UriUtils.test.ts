@@ -5,7 +5,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { ParsedRedisResource } from '../../../src-shared/ParsedRedisResource';
 import { createKeyContentUri, decodeUri } from '../../utils/UriUtils';
-import { KeyType } from '../../KeyType';
+import { KeyType } from '../../../src-shared/KeyType';
 
 describe('URI Utils', () => {
     const hostName = 'my-cache.redis.cache.windows.net';

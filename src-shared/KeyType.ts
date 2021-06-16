@@ -11,4 +11,5 @@ export enum KeyType {
     Set = 'set',
     SortedSet = 'zset',
     String = 'string',
+    Unknown = 'unknown',
 }

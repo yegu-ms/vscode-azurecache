@@ -18,3 +18,7 @@ export async function getConnectionString(parsedRedisResource: ParsedRedisResour
     const { hostName, sslPort } = parsedRedisResource;
     return `${hostName}:${sslPort},password=${accessKey},ssl=True,abortConnect=False`;
 }
+
+export function getShardNumber(port: number): number {
+    return Math.floor((port % 100) / 2);
+}

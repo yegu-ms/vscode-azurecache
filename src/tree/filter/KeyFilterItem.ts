@@ -8,8 +8,9 @@ import { KeyCollectionItem } from '../KeyCollectionItem';
 import { CollectionElement, CollectionElementValue } from '../../../src-shared/CollectionElement';
 import { CollectionWebview } from '../../webview/CollectionWebview';
 import { RedisClient } from '../../clients/RedisClient';
-import { KeyType } from '../../KeyType';
-import { StrAllKeys, StrKeyFilter } from '../../Strings';
+import { getShardNumber } from '../../utils/ResourceUtils';
+import { KeyType } from '../../../src-shared/KeyType';
+import { StrAllKeys, StrKeyFilter, StrDatabaseAbbrv, StrShard } from '../../Strings';
 
 /**
  * Tree item for a key filter, which is used in two situations:
@@ -110,17 +111,43 @@ export class KeyFilterItem extends KeyCollectionItem {
         }
 
         const client = await RedisClient.connectToRedisResource(this.parsedRedisResource);
-        const dbOrNodeId = !this.parent.isClustered
-            ? this.dbs[this.currentSelection]
-            : this.nodes[this.currentSelection].id;
+        let dbOrNodeId: number | string;
+        let db: number | undefined = undefined;
+        let shard: number | undefined = undefined;
+        if (!this.parent.isClustered) {
+            dbOrNodeId = this.dbs[this.currentSelection];
+            db = this.dbs.length > 1 ? dbOrNodeId : undefined;
+        } else {
+            dbOrNodeId = this.nodes[this.currentSelection].id;
+            shard = this.nodes.length > 1 ? getShardNumber(this.nodes[this.currentSelection].port) : undefined;
+        }
 
-        // Sometimes SCAN returns no results, so continue SCANNING until we receive results or we reach the end
+            // Sometimes SCAN returns no results, so continue SCANNING until we receive results or we reach the end
         let curCursor = this.scanCursor;
         let scannedKeys: string[] = [];
 
         do {
             [curCursor, scannedKeys] = await client.scan(curCursor, 'MATCH', this.filter, dbOrNodeId);
         } while (curCursor !== '0' && scannedKeys.length === 0);
+
+        const collectionElements = await Promise.all(
+            scannedKeys.map(async (key) => {
+                const type = await this.getKeyType(client, key);
+                if (type !== undefined) {
+                    return this.loadValue(client, {
+                        key,
+                        type: type as KeyType,
+                        value: [],
+                        db,
+                        shard,
+                        cursor: type === KeyType.Set || type === KeyType.Hash ? '0' : undefined,
+                        hasMore: false,
+                    } as CollectionElement);
+                } else {
+                    return { key, type: KeyType.Unknown, value: [], dbOrNode: '', hasMore: false } as CollectionElement;
+                }
+            })
+        );
 
         if (curCursor === '0') {
             this.currentSelection += 1;
@@ -129,24 +156,7 @@ export class KeyFilterItem extends KeyCollectionItem {
             this.scanCursor = curCursor;
         }
 
-        const collectionElements = await Promise.all(
-            scannedKeys.map(async (key) => {
-                const type = await this.getKeyType(client, key);
-                if (type !== undefined) {
-                    return this.loadValue(client, {
-                        key,
-                        type,
-                        value: [],
-                        cursor: type === KeyType.Set || type === KeyType.Hash ? '0' : undefined,
-                        hasMore: false,
-                    } as CollectionElement);
-                } else {
-                    return { key, type: 'unknown', value: [], hasMore: false } as CollectionElement;
-                }
-            })
-        );
-
-        return collectionElements.filter((el) => el.type !== 'unknown');
+        return collectionElements.filter((el) => el.type !== KeyType.Unknown);
     }
 
     public hasMoreKeys(): boolean {
@@ -184,9 +194,6 @@ export class KeyFilterItem extends KeyCollectionItem {
                 const min = curCursor;
                 const max = Math.min(curCursor + KeyFilterItem.incrementCount, element.size) - 1;
                 const values = await client.lrange(element.key, min, max, dbOrNodeId);
-                curCursor += values.length;
-                element.cursor = String(curCursor);
-                element.hasMore = curCursor < element.size;
 
                 values.map((value) => {
                     element.value.push({
@@ -194,6 +201,10 @@ export class KeyFilterItem extends KeyCollectionItem {
                         value,
                     } as CollectionElementValue);
                 });
+
+                curCursor += values.length;
+                element.cursor = curCursor.toString();
+                element.hasMore = curCursor < element.size;
             }
         } else if (element.type === KeyType.Set && element.cursor !== undefined) {
             let curCursor = element.cursor;
@@ -205,15 +216,15 @@ export class KeyFilterItem extends KeyCollectionItem {
                 values.push(...result[1]);
             } while (curCursor !== '0' && values.length < KeyFilterItem.incrementCount);
 
-            element.cursor = curCursor === '0' ? undefined : curCursor;
-            element.hasMore = element.cursor !== undefined;
-
             values.map((value) => {
                 element.value.push({
                     key: element.key,
                     value,
                 } as CollectionElementValue);
             });
+
+            element.cursor = curCursor === '0' ? undefined : curCursor;
+            element.hasMore = element.cursor !== undefined;
         } else if (element.type === KeyType.SortedSet) {
             if (element.size === undefined || element.cursor === undefined) {
                 element.size = await client.zcard(element.key, dbOrNodeId);
@@ -225,9 +236,6 @@ export class KeyFilterItem extends KeyCollectionItem {
                 const min = curCursor;
                 const max = Math.min(curCursor + KeyFilterItem.incrementCount, element.size) - 1;
                 const values = await client.zrange(element.key, min, max, dbOrNodeId);
-                curCursor = max + 1;
-                element.cursor = String(curCursor);
-                element.hasMore = curCursor < element.size;
 
                 let value = '';
                 // zrange returns a single list alternating between the key value and the key score
@@ -244,8 +252,11 @@ export class KeyFilterItem extends KeyCollectionItem {
                         });
                     }
                 }
-
                 element.value = element.value.sort((a, b) => ((a.id || '') > (b.id || '') ? 1 : -1));
+
+                curCursor = max + 1;
+                element.cursor = curCursor.toString();
+                element.hasMore = curCursor < element.size;
             }
         } else if (element.type === KeyType.Hash && element.cursor !== undefined) {
             let curCursor = element.cursor;
@@ -259,9 +270,6 @@ export class KeyFilterItem extends KeyCollectionItem {
                 values.push(...result[1]);
                 // scannedFields contains field name and value, so divide by 2 to get number of values scanned
             } while (curCursor !== '0' && values.length / 2 < KeyFilterItem.incrementCount);
-
-            element.cursor = curCursor === '0' ? undefined : curCursor;
-            element.hasMore = element.cursor !== undefined;
 
             let field = '';
             // HSCAN returns a single list alternating between the hash field name and the hash field value
@@ -278,6 +286,9 @@ export class KeyFilterItem extends KeyCollectionItem {
                     });
                 }
             }
+
+            element.cursor = curCursor === '0' ? undefined : curCursor;
+            element.hasMore = element.cursor !== undefined;
         } else {
             element.value = [{ key: element.key, value: '' }];
         }

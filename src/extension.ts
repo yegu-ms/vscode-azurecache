@@ -129,16 +129,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.commands.executeCommand('azure-account.selectSubscriptions');
     });
 
-    registerCommand('azureCache.refreshSubscription', (_actionContext: IActionContext, treeItem?: AzExtTreeItem) =>
-        ExtVars.treeDataProvider.refresh(treeItem)
+    registerCommand('azureCache.refreshSubscription', (actionContext: IActionContext, treeItem?: AzExtTreeItem) =>
+        ExtVars.treeDataProvider.refresh(actionContext, treeItem)
     );
 
-    registerCommand('azureCache.refreshCache', (_actionContext: IActionContext, treeItem?: AzureCacheItem) =>
-        ExtVars.treeDataProvider.refresh(treeItem)
+    registerCommand('azureCache.refreshCache', (actionContext: IActionContext, treeItem?: AzureCacheItem) =>
+        treeItem?.refresh(actionContext)
     );
 
-    registerCommand('azureCache.refreshKeyFilter', (_actionContext: IActionContext, treeItem?: KeyFilterItem) =>
-        ExtVars.treeDataProvider.refresh(treeItem)
+    registerCommand('azureCache.refreshKeyFilter', (actionContext: IActionContext, treeItem?: KeyFilterItem) =>
+        treeItem?.refresh(actionContext)
     );
 
     registerCommand('azureCache.openInPortal', async (actionContext: IActionContext, treeItem?: AzureCacheItem) => {
