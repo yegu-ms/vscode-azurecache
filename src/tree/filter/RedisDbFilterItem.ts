@@ -12,22 +12,29 @@ import { StrDatabaseAbbrv } from '../../Strings';
  */
 export class RedisDbFilterItem extends AzExtTreeItem {
     private static readonly contextValue = 'redisDbFilter';
+    public readonly label;
+    public readonly iconPath;
+    public readonly contextValue;
 
     constructor(readonly parent: AzureCacheItem) {
         super(parent);
+
+        this.label = this._label();
+        this.iconPath = this._iconPath();
+        this.contextValue = this._contextValue();
     }
 
-    get contextValue(): string {
-        return RedisDbFilterItem.contextValue;
+    private _label(): string {
+        const selectedDbs = this.parent.getSelectedDataFilters().map((item) => item.id);
+        return `*${StrDatabaseAbbrv} ${selectedDbs.join(', ')}`;
     }
 
-    get iconPath(): TreeItemIconPath {
+    private _iconPath(): TreeItemIconPath {
         return new ThemeIcon('database');
     }
 
-    get label(): string {
-        const selectedDbs = this.parent.getSelectedDataFilters().map((item) => item.id);
-        return `*${StrDatabaseAbbrv} ${selectedDbs.join(', ')}`;
+    private _contextValue(): string {
+        return RedisDbFilterItem.contextValue;
     }
 
     public getDbSelections(): QuickPickItem[] {

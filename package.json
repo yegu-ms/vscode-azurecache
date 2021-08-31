@@ -2,12 +2,12 @@
     "name": "vscode-azurecache",
     "displayName": "Azure Cache",
     "description": "Manage and browse through data in your Azure Caches.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "aiKey": "AIF-00000000-0000-0000-0000-000000000000",
     "publisher": "ms-azurecache",
     "preview": true,
     "engines": {
-        "vscode": "^1.43.0"
+        "vscode": "^1.57.0"
     },
     "repository": {
         "type": "git",
@@ -245,6 +245,7 @@
         "filemanager-webpack-plugin": "3.0.0-alpha.1",
         "glob": "^7.1.7",
         "mocha": "^9.0.0",
+        "ms-rest": "^2.5.4",
         "prettier": "2.3.1",
         "rimraf": "^3.0.2",
         "style-loader": "^2.0.0",

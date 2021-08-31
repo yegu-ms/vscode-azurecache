@@ -9,8 +9,8 @@ import { CollectionElement, CollectionElementValue } from '../../../src-shared/C
 import { CollectionWebview } from '../../webview/CollectionWebview';
 import { RedisClient } from '../../clients/RedisClient';
 import { getShardNumber } from '../../utils/ResourceUtils';
-import { KeyType } from '../../../src-shared/KeyType';
-import { StrAllKeys, StrKeyFilter, StrDatabaseAbbrv, StrShard } from '../../Strings';
+import { RedisKeyType } from '../../../src-shared/RedisKeyType';
+import { StrAllKeys, StrKeyFilter } from '../../Strings';
 
 /**
  * Tree item for a key filter, which is used in two situations:
@@ -21,11 +21,16 @@ import { StrAllKeys, StrKeyFilter, StrDatabaseAbbrv, StrShard } from '../../Stri
 export class KeyFilterItem extends KeyCollectionItem {
     private static readonly contextValue = 'keyFilter';
     private static readonly commandId = 'azureCache.viewFilteredKeys';
-    private static readonly incrementCount = 1;
+    public readonly label;
+    public readonly iconPath;
+    public readonly commandId;
+    public readonly commandArgs;
+    public readonly contextValue;
 
     protected webview: CollectionWebview;
 
-    private filter: string;
+    private static readonly incrementCount = 1;
+    private filter: string = '*';
     private dbs: number[] = [];
     private nodes: ClusterNode[] = [];
     private currentSelection = 0;
@@ -34,27 +39,33 @@ export class KeyFilterItem extends KeyCollectionItem {
     constructor(readonly parent: AzureCacheItem, readonly index: number, readonly pattern: string) {
         super(parent);
         this.filter = pattern;
+        this.label = this._label();
+        this.iconPath = this._iconPath();
+        this.commandId = this._commandId();
+        this.commandArgs = this._commandArgs();
+        this.contextValue = this._contextValue();
+    
         this.webview = new CollectionWebview(this, 'filteredKeys');
     }
 
-    get commandId(): string {
-        return KeyFilterItem.commandId;
+    private _label(): string {
+        return this.filter === '*' ? StrAllKeys : StrKeyFilter.replace('$$$', this.filter);
     }
 
-    get commandArgs(): unknown[] {
-        return [this];
-    }
-
-    get contextValue(): string {
-        return KeyFilterItem.contextValue;
-    }
-
-    get iconPath(): TreeItemIconPath {
+    private _iconPath(): TreeItemIconPath {
         return new ThemeIcon('key');
     }
 
-    get label(): string {
-        return this.filter === '*' ? StrAllKeys : StrKeyFilter.replace('$$$', this.filter);
+    private _commandId(): string {
+        return KeyFilterItem.commandId;
+    }
+
+    private _commandArgs(): unknown[] {
+        return [this];
+    }
+
+    private _contextValue(): string {
+        return KeyFilterItem.contextValue;
     }
 
     public getFilter(): string {
@@ -136,15 +147,15 @@ export class KeyFilterItem extends KeyCollectionItem {
                 if (type !== undefined) {
                     return this.loadValue(client, {
                         key,
-                        type: type as KeyType,
+                        type: type as RedisKeyType,
                         value: [],
                         db,
                         shard,
-                        cursor: type === KeyType.Set || type === KeyType.Hash ? '0' : undefined,
+                        cursor: type === RedisKeyType.Set || type === RedisKeyType.Hash ? '0' : undefined,
                         hasMore: false,
                     } as CollectionElement);
                 } else {
-                    return { key, type: KeyType.Unknown, value: [], dbOrNode: '', hasMore: false } as CollectionElement;
+                    return { key, type: RedisKeyType.Unknown, value: [], dbOrNode: '', hasMore: false } as CollectionElement;
                 }
             })
         );
@@ -156,7 +167,7 @@ export class KeyFilterItem extends KeyCollectionItem {
             this.scanCursor = curCursor;
         }
 
-        return collectionElements.filter((el) => el.type !== KeyType.Unknown);
+        return collectionElements.filter((el) => el.type !== RedisKeyType.Unknown);
     }
 
     public hasMoreKeys(): boolean {
@@ -180,10 +191,10 @@ export class KeyFilterItem extends KeyCollectionItem {
             ? this.dbs[this.currentSelection]
             : this.nodes[this.currentSelection].id;
 
-        if (element.type === KeyType.String) {
+        if (element.type === RedisKeyType.String) {
             const value = (await client.get(element.key, dbOrNodeId)) || '';
             element.value = [{ key: element.key, value }];
-        } else if (element.type === KeyType.List) {
+        } else if (element.type === RedisKeyType.List) {
             if (element.size === undefined || element.cursor === undefined) {
                 element.size = await client.llen(element.key, dbOrNodeId);
                 element.cursor = '0';
@@ -206,7 +217,7 @@ export class KeyFilterItem extends KeyCollectionItem {
                 element.cursor = curCursor.toString();
                 element.hasMore = curCursor < element.size;
             }
-        } else if (element.type === KeyType.Set && element.cursor !== undefined) {
+        } else if (element.type === RedisKeyType.Set && element.cursor !== undefined) {
             let curCursor = element.cursor;
             const values: string[] = [];
 
@@ -214,7 +225,7 @@ export class KeyFilterItem extends KeyCollectionItem {
                 const result = await client.sscan(element.key, curCursor, 'MATCH', '*', dbOrNodeId);
                 curCursor = result[0];
                 values.push(...result[1]);
-            } while (curCursor !== '0' && values.length < KeyFilterItem.incrementCount);
+            } while (curCursor !== '0' && values.length <= KeyFilterItem.incrementCount);
 
             values.map((value) => {
                 element.value.push({
@@ -225,7 +236,7 @@ export class KeyFilterItem extends KeyCollectionItem {
 
             element.cursor = curCursor === '0' ? undefined : curCursor;
             element.hasMore = element.cursor !== undefined;
-        } else if (element.type === KeyType.SortedSet) {
+        } else if (element.type === RedisKeyType.SortedSet) {
             if (element.size === undefined || element.cursor === undefined) {
                 element.size = await client.zcard(element.key, dbOrNodeId);
                 element.cursor = '0';
@@ -258,7 +269,7 @@ export class KeyFilterItem extends KeyCollectionItem {
                 element.cursor = curCursor.toString();
                 element.hasMore = curCursor < element.size;
             }
-        } else if (element.type === KeyType.Hash && element.cursor !== undefined) {
+        } else if (element.type === RedisKeyType.Hash && element.cursor !== undefined) {
             let curCursor = element.cursor;
             const values: string[] = [];
 
@@ -269,7 +280,7 @@ export class KeyFilterItem extends KeyCollectionItem {
                 curCursor = result[0];
                 values.push(...result[1]);
                 // scannedFields contains field name and value, so divide by 2 to get number of values scanned
-            } while (curCursor !== '0' && values.length / 2 < KeyFilterItem.incrementCount);
+            } while (curCursor !== '0' && values.length / 2 <= KeyFilterItem.incrementCount);
 
             let field = '';
             // HSCAN returns a single list alternating between the hash field name and the hash field value

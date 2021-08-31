@@ -12,22 +12,29 @@ import { StrShard } from '../../Strings';
  */
 export class RedisClusterNodeFilterItem extends AzExtTreeItem {
     private static readonly contextValue = 'redisClusterNodeFilter';
+    public readonly label;
+    public readonly iconPath;
+    public readonly contextValue;
 
     constructor(readonly parent: AzureCacheItem) {
         super(parent);
+
+        this.label = this._label();
+        this.iconPath = this._iconPath();
+        this.contextValue = this._contextValue();
     }
 
-    get contextValue(): string {
-        return RedisClusterNodeFilterItem.contextValue;
+    private _label(): string {
+        const selectedDbs = this.parent.getSelectedDataFilters().map((item) => item.id);
+        return `*${StrShard} ${selectedDbs.join(', ')}`;
     }
 
-    get iconPath(): TreeItemIconPath {
+    private _iconPath(): TreeItemIconPath {
         return new ThemeIcon('versions');
     }
 
-    get label(): string {
-        const selectedDbs = this.parent.getSelectedDataFilters().map((item) => item.id);
-        return `*${StrShard} ${selectedDbs.join(', ')}`;
+    private _contextValue(): string {
+        return RedisClusterNodeFilterItem.contextValue;
     }
 
     public getClusterNodeSelections(): QuickPickItem[] {

@@ -5,7 +5,7 @@
  * All of the supported key data types.
  * Note: Bitmaps and HyperLogLogs count as 'string'.
  */
-export enum KeyType {
+export enum RedisKeyType {
     Hash = 'hash',
     List = 'list',
     Set = 'set',

@@ -10,10 +10,6 @@
     color: var(--vscode-activityBar-foreground);
 }
 
-.ms-Button-flexContainer {
-    height: inherit;
-}
-
 .ms-DetailsHeader {
     background-color: var(--vscode-editor-background);
 }
@@ -65,6 +61,18 @@
 .ms-GroupedList {
     color: var(--vscode-editor-foreground);
     background-color: var(--vscode-editor-background);
+}
+
+.ms-Link {
+    color: var(--vscode-editor-foreground);
+    background-color: transparent;
+    font-size: medium;
+    text-decoration: none;
+}
+
+.ms-Link:active, .ms-Link:hover, .ms-Link:active:hover {
+    color: var(--vscode-editor-foreground);
+    text-decoration: none;
 }
 
 .ms-Pivot {

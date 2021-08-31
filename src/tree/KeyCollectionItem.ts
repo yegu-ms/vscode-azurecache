@@ -6,7 +6,6 @@ import { CollectionElement } from '../../src-shared/CollectionElement';
 import { CollectionWebview } from '../webview/CollectionWebview';
 import { ParsedRedisResource } from '../../src-shared/ParsedRedisResource';
 import { AzureCacheItem } from './azure/AzureCacheItem';
-import { AzureCacheClusterItem } from './azure/AzureCacheClusterItem';
 
 /**
  * Base class for tree items that represent a collection-type key, like lists, sets, and hashes.
@@ -22,7 +21,7 @@ export abstract class KeyCollectionItem extends AzExtTreeItem {
      */
     protected abstract readonly webview: CollectionWebview;
 
-    constructor(readonly parent: AzureCacheItem | AzureCacheClusterItem) {
+    constructor(readonly parent: AzureCacheItem) {
         super(parent);
         this.parsedRedisResource = parent.parsedRedisResource;
     }

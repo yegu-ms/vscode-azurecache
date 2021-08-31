@@ -12,6 +12,7 @@ import {
     IRenderFunction,
     IStyle,
     DetailsRow,
+    Link,
     Selection,
     SelectionZone,
     SelectionMode,
@@ -58,21 +59,6 @@ const cancelIcon: IIconProps = {
     iconName: 'ChromeClose',
     styles: { root: { color: 'var(--vscode-peekViewTitleLabel-foreground)' } },
 };
-
-const columns: IColumn[] = [
-    {
-        key: 'value1',
-        name: 'Value 1',
-        fieldName: 'value1',
-        minWidth: 0,
-    },
-    {
-        key: 'value2',
-        name: 'Value 2',
-        fieldName: 'value2',
-        minWidth: 300,
-    },
-];
 
 interface State {
     title: string;
@@ -280,12 +266,33 @@ export class CollectionView extends React.Component<{}, State> {
         );
     };
 
+    columns: IColumn[] = [
+        {
+            key: 'value1',
+            name: 'Value 1',
+            fieldName: 'value1',
+            minWidth: 0,
+            onRender: (item?: CollectionViewItemValue, index?: number) => (
+                <Link onClick={(_e) => this.itemSelected(item, index)}>{item?.value1}</Link>
+            )
+        },
+        {
+            key: 'value2',
+            name: 'Value 2',
+            fieldName: 'value2',
+            minWidth: 300,
+            onRender: (item?: CollectionViewItemValue, index?: number) => (
+                item?.value2 !== undefined && <Link onClick={(_e) => this.itemSelected(item, index)}>{item?.value2}</Link>
+            )
+        },
+    ];
+    
     onRenderCell = (nestingDepth?: number, item?: CollectionViewItemValue, index?: number): JSX.Element => {
         const { selection } = this.state;
 
         return (
             <DetailsRow
-                columns={columns}
+                columns={this.columns}
                 groupNestingDepth={nestingDepth}
                 item={item}
                 itemIndex={index !== undefined ? index : 0}
@@ -296,13 +303,20 @@ export class CollectionView extends React.Component<{}, State> {
         );
     };
 
-    onItemInvoked = (obj?: IObjectWithKey, itemIndex?: number, _event?: Event): void => {
+    onItemInvoked = (obj?: IObjectWithKey, index?: number, _event?: Event): void => {
         if (obj === undefined) {
             return;
         }
 
+        this.itemSelected(obj! as CollectionViewItemValue, index);
+    };
+
+    itemSelected = (item?: CollectionViewItemValue, itemIndex?: number): void => {
+        if (item === undefined) {
+            return;
+        }
+
         const { viewItems } = this.state;
-        const item = obj! as CollectionViewItemValue;
         if (!item.loadAction) {
             this.setState({
                 currentKey: item.value2 === undefined ? item.key : `${item.key} (${item.value1})`,
@@ -325,7 +339,7 @@ export class CollectionView extends React.Component<{}, State> {
                 });
             }
         }
-    };
+    }
 
     /**
      * Tells extension to send over more viewItems.

@@ -37,6 +37,8 @@ export const StrLoading = '(Loading...)';
 export const StrText = 'Text';
 export const StrBinary = 'Binary';
 export const StrJson = 'JSON';
+export const StrShowAll = '(Show all)';
+export const StrNotJson = 'Not a JSON object';
 
 export const StrKeyTypes = {
     hash: 'Hash',

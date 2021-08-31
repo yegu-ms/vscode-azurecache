@@ -5,7 +5,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { ParsedRedisResource } from '../../../src-shared/ParsedRedisResource';
 import { createKeyContentUri, decodeUri } from '../../utils/UriUtils';
-import { KeyType } from '../../../src-shared/KeyType';
+import { RedisKeyType } from '../../../src-shared/RedisKeyType';
 
 describe('URI Utils', () => {
     const hostName = 'my-cache.redis.cache.windows.net';
@@ -31,7 +31,7 @@ describe('URI Utils', () => {
 
     describe('createKeyContentUri', () => {
         it('should properly encode given parameters', () => {
-            const uri = createKeyContentUri(parsedRedisResource, 12, KeyType.SortedSet, 'mykey', 'subkey', 'altsubkey');
+            const uri = createKeyContentUri(parsedRedisResource, 12, RedisKeyType.SortedSet, 'mykey', 'subkey', 'altsubkey');
             assert.strictEqual(
                 uri.query,
                 'payload=eyJyZXNvdXJjZUlkIjoiL3N1YnNjcmlwdGlvbnMvMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwL3Jlc291cmNlR3JvdXBzL3Jlcy1ncm91cC9wcm92aWRlcnMvTWljcm9zb2Z0LkNhY2hlL1JlZGlzL215LWNhY2hlIiwiZGIiOjEyLCJ0eXBlIjoienNldCIsImtleSI6Im15a2V5Iiwic3Via2V5Ijoic3Via2V5In0%3D'
@@ -39,36 +39,36 @@ describe('URI Utils', () => {
         });
 
         it('should sanitize URI path', () => {
-            const uri = createKeyContentUri(parsedRedisResource, 0, KeyType.String, 'a#b? c/d\\e');
+            const uri = createKeyContentUri(parsedRedisResource, 0, RedisKeyType.String, 'a#b? c/d\\e');
             assert.strictEqual(uri.path, 'my-cache.redis.cache.windows.net/a_b_ c_d_e');
         });
 
         it('should generate valid URI for strings', () => {
-            const uri = createKeyContentUri(parsedRedisResource, 0, KeyType.String, 'mykey');
+            const uri = createKeyContentUri(parsedRedisResource, 0, RedisKeyType.String, 'mykey');
             assert.strictEqual(uri.path, 'my-cache.redis.cache.windows.net/mykey');
             assert.strictEqual(uri.scheme, 'azureCache');
         });
 
         it('should generate valid URI for lists', () => {
-            const uri = createKeyContentUri(parsedRedisResource, 0, KeyType.List, 'mykey', '10');
+            const uri = createKeyContentUri(parsedRedisResource, 0, RedisKeyType.List, 'mykey', '10');
             assert.strictEqual(uri.path, 'my-cache.redis.cache.windows.net/mykey[10]');
             assert.strictEqual(uri.scheme, 'azureCache');
         });
 
         it('should generate valid URI for sets', () => {
-            const uri = createKeyContentUri(parsedRedisResource, 0, KeyType.Set, 'mykey', '10');
+            const uri = createKeyContentUri(parsedRedisResource, 0, RedisKeyType.Set, 'mykey', '10');
             assert.strictEqual(uri.path, 'my-cache.redis.cache.windows.net/mykey[10]');
             assert.strictEqual(uri.scheme, 'azureCache');
         });
 
         it('should generate valid URI for hashes', () => {
-            const uri = createKeyContentUri(parsedRedisResource, 0, KeyType.Hash, 'mykey', 'hashfield');
+            const uri = createKeyContentUri(parsedRedisResource, 0, RedisKeyType.Hash, 'mykey', 'hashfield');
             assert.strictEqual(uri.path, 'my-cache.redis.cache.windows.net/mykey[hashfield]');
             assert.strictEqual(uri.scheme, 'azureCache');
         });
 
         it('should generate valid URI for sorted sets', () => {
-            const uri = createKeyContentUri(parsedRedisResource, 0, KeyType.SortedSet, 'mykey', '5', '-100');
+            const uri = createKeyContentUri(parsedRedisResource, 0, RedisKeyType.SortedSet, 'mykey', '5', '-100');
             assert.strictEqual(uri.path, 'my-cache.redis.cache.windows.net/mykey[-100]');
             assert.strictEqual(uri.scheme, 'azureCache');
         });

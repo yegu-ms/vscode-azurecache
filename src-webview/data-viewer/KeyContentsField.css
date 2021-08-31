@@ -29,7 +29,7 @@
     background-color: var(--vscode-peekViewTitle-background);
     font-size: large;
     border: 1px solid var(--vscode-peekViewTitleLabel-foreground);
-    display: flex;
+    display: block;
     flex-wrap: wrap;
     overflow-y: auto;
     padding: 12px;
@@ -38,4 +38,18 @@
 
 .content-field:hover {
     border-color: var(--vscode-peekViewTitleLabel-foreground);
+}
+
+.content-field-link {
+    color: var(--vscode-peekViewTitleLabel-foreground);
+    background-color: var(--vscode-peekViewTitle-background);
+    font-size: small;
+}
+
+.content-field-link:hover {
+    color: var(--vscode-peekViewTitleLabel-foreground);
+}
+
+.content-field-message {
+    font-size: medium;
 }

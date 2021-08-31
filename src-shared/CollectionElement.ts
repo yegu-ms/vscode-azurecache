@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { KeyType } from './KeyType';
+import { RedisKeyType } from './RedisKeyType';
 
 export interface CollectionElementValue {
     key: string;
@@ -12,7 +12,7 @@ export interface CollectionElementValue {
 export interface CollectionElement {
     id?: string;
     key: string;
-    type: KeyType;
+    type: RedisKeyType;
     value: CollectionElementValue[];
     db?: number;
     shard?: number;

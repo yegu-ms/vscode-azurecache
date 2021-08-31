@@ -47,6 +47,13 @@ interface KeyFilter {
 export class AzureCacheItem extends AzureParentTreeItem implements DataFilterParentItem, KeyFilterParentItem {
     public static contextValue = 'redisCache';
     private static commandId = 'azureCache.viewCacheProps';
+    public readonly id;
+    public readonly label;
+    public readonly iconPath;
+    public readonly commandId;
+    public readonly commandArgs;
+    public readonly contextValue;
+
     public isClustered = false;
 
     private dbs?: FilterableDb[];
@@ -64,7 +71,13 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         public parsedRedisResource: ParsedRedisResource
     ) {
         super(parent);
-
+        this.id = this._id();
+        this.label = this._label();
+        this.iconPath = this._iconPath();
+        this.commandId = this._commandId();
+        this.commandArgs = this._commandArgs();
+        this.contextValue = this._contextValue();
+    
         if (!parsedRedisResource.cluster) {
             this.dbs = [];
             this.dbFilterItem = new RedisDbFilterItem(this);
@@ -84,28 +97,28 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         this.webview = new CachePropsWebview(this);
     }
 
-    get commandId(): string {
-        return AzureCacheItem.commandId;
-    }
-
-    get commandArgs(): unknown[] {
-        return [this];
-    }
-
-    get contextValue(): string {
-        return AzureCacheItem.contextValue;
-    }
-
-    get iconPath(): TreeItemIconPath {
-        return path.join(ExtVars.context.asAbsolutePath('resources'), 'azure-cache.svg');
-    }
-
-    get id(): string {
+    private _id(): string {
         return this.parsedRedisResource.resourceId;
     }
 
-    get label(): string {
+    private _label(): string {
         return this.parsedRedisResource.name;
+    }
+
+    private _iconPath(): TreeItemIconPath {
+        return path.join(ExtVars.context.asAbsolutePath('resources'), 'azure-cache.svg');
+    }
+
+    private _commandId(): string {
+        return AzureCacheItem.commandId;
+    }
+
+    private _commandArgs(): unknown[] {
+        return [this];
+    }
+
+    private _contextValue(): string {
+        return AzureCacheItem.contextValue;
     }
 
     public async loadMoreChildrenImpl(clearCache: boolean, _context: IActionContext): Promise<AzExtTreeItem[]> {
@@ -172,7 +185,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         }
 
         if (changed) {
-            this.refreshImpl();
+            vscode.commands.executeCommand('azureCache.refreshCache', this);
         }
     }
 
@@ -235,7 +248,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
                 pattern: filterExpr,
                 item: new KeyFilterItem(this, count, filterExpr),
             } as KeyFilter);
-            this.refreshImpl();
+            vscode.commands.executeCommand('azureCache.refreshCache', this);
             return count;
         }
 
@@ -251,7 +264,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         const i = this.filters.findIndex((filter) => filter.index === index);
         if (this.filters[i].pattern !== filterExpr) {
             this.filters[i].pattern = filterExpr;
-            this.filters[i].item.refreshImpl();
+            vscode.commands.executeCommand('azureCache.refreshKeyFilter', this.filters[i].item);
         }
     }
 
@@ -259,7 +272,7 @@ export class AzureCacheItem extends AzureParentTreeItem implements DataFilterPar
         const i = this.filters.findIndex((filter) => filter.index === index);
         if (i >= 0) {
             this.filters.splice(i, 1);
-            this.refreshImpl();
+            vscode.commands.executeCommand('azureCache.refreshCache', this);
         }
     }
 
